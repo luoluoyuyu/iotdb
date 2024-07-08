@@ -43,7 +43,7 @@ import java.util.HashMap;
 public class PipeDataNodePluginAgentTest {
   private static final String TMP_LIB_TOOR_DIR = "PipePluginAgentTest_libroot";
   private static final String TMP_TEMP_LIB_ROOT_DIR = "PipePluginAgentTest_temporarylibroot";
-  private static final String PLUGIN_NAME = "plugin-name";
+  private static final String PLUGIN_NAME = "PLUGIN-NAME";
 
   @Before
   public void before() {
@@ -52,10 +52,6 @@ public class PipeDataNodePluginAgentTest {
       PipePluginClassLoaderManager.setupAndGetInstance(TMP_LIB_TOOR_DIR);
       String pluginPath = PipePluginExecutableManager.getInstance().getPluginsDirPath(PLUGIN_NAME);
       Files.createDirectories(Paths.get(pluginPath));
-      String pluginJarPath =
-          PipePluginExecutableManager.getInstance()
-              .getPluginInstallPath(PLUGIN_NAME, "IoTDBDataRegionExtractor.jar");
-      Files.createDirectories(Paths.get(pluginJarPath));
     } catch (IOException e) {
       Assert.fail();
     }
