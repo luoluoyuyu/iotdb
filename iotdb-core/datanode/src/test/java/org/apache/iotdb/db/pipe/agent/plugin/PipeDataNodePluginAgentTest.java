@@ -52,7 +52,9 @@ public class PipeDataNodePluginAgentTest {
       PipePluginClassLoaderManager.setupAndGetInstance(TMP_LIB_TOOR_DIR);
       String pluginPath = PipePluginExecutableManager.getInstance().getPluginsDirPath(PLUGIN_NAME);
       Files.createDirectories(Paths.get(pluginPath));
-      String pluginJarPath = PipePluginExecutableManager.getInstance().getPluginInstallPath(PLUGIN_NAME,"IoTDBDataRegionExtractor.jar");
+      String pluginJarPath =
+          PipePluginExecutableManager.getInstance()
+              .getPluginInstallPath(PLUGIN_NAME, "IoTDBDataRegionExtractor.jar");
       Files.createDirectories(Paths.get(pluginJarPath));
     } catch (IOException e) {
       Assert.fail();
