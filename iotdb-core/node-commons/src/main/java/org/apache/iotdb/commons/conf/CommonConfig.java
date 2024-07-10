@@ -182,7 +182,7 @@ public class CommonConfig {
 
   private boolean pipeHardLinkWALEnabled = false;
 
-  private int pipeRealTimeFirstDequeHistoryThreshold = 100;
+  private int pipeRealtimeQueuePollHistoryThreshold = 100;
 
   /** The maximum number of threads that can be used to execute subtasks in PipeSubtaskExecutor. */
   private int pipeSubtaskExecutorMaxThreadNum =
@@ -847,13 +847,12 @@ public class CommonConfig {
         pipeSubtaskExecutorCronHeartbeatEventIntervalSeconds;
   }
 
-  public int getPipeRealTimeFirstDequeHistoryThreshold() {
-    return pipeRealTimeFirstDequeHistoryThreshold;
+  public int getPipeRealtimeQueuePollHistoryThreshold() {
+    return pipeRealtimeQueuePollHistoryThreshold;
   }
 
-  public void setPipeRealTimeFirstDequeHistoryThreshold(
-      int pipeRealTimeFirstDequeHistoryThreshold) {
-    this.pipeRealTimeFirstDequeHistoryThreshold = pipeRealTimeFirstDequeHistoryThreshold;
+  public void setPipeRealtimeQueuePollHistoryThreshold(int pipeRealtimeQueuePollHistoryThreshold) {
+    this.pipeRealtimeQueuePollHistoryThreshold = pipeRealtimeQueuePollHistoryThreshold;
   }
 
   public void setPipeAirGapReceiverEnabled(boolean pipeAirGapReceiverEnabled) {

@@ -276,11 +276,11 @@ public class CommonDescriptor {
                 String.valueOf(
                     config.getPipeDataStructureTabletMemoryBlockAllocationRejectThreshold()))));
 
-    config.setPipeRealTimeFirstDequeHistoryThreshold(
+    config.setPipeRealtimeQueuePollHistoryThreshold(
         Integer.parseInt(
             properties.getProperty(
-                "pipe_realtime_first_deque_history_threshold",
-                Integer.toString(config.getPipeRealTimeFirstDequeHistoryThreshold()))));
+                "pipe_realtime_queue_poll_history_threshold",
+                Integer.toString(config.getPipeRealtimeQueuePollHistoryThreshold()))));
 
     config.setPipeSubtaskExecutorMaxThreadNum(
         Integer.parseInt(

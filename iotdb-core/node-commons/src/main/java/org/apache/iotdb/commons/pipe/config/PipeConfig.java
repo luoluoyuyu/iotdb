@@ -60,8 +60,8 @@ public class PipeConfig {
 
   /////////////////////////////// Subtask Connector ///////////////////////////////
 
-  public int getPipeRealTimeFirstDequeHistoryThreshold() {
-    return COMMON_CONFIG.getPipeRealTimeFirstDequeHistoryThreshold();
+  public int getPipeRealtimeQueuePollHistoryThreshold() {
+    return COMMON_CONFIG.getPipeRealtimeQueuePollHistoryThreshold();
   }
 
   /////////////////////////////// Subtask Executor ///////////////////////////////
@@ -312,7 +312,7 @@ public class PipeConfig {
         getPipeDataStructureTabletMemoryBlockAllocationRejectThreshold());
 
     LOGGER.info(
-        "PipeRealTimeFirstDequeHistoryThreshold: {}", getPipeRealTimeFirstDequeHistoryThreshold());
+        "PipeRealTimeFirstDequeHistoryThreshold: {}", getPipeRealtimeQueuePollHistoryThreshold());
 
     LOGGER.info("PipeSubtaskExecutorMaxThreadNum: {}", getPipeSubtaskExecutorMaxThreadNum());
     LOGGER.info(
