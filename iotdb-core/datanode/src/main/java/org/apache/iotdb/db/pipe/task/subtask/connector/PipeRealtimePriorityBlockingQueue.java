@@ -111,9 +111,7 @@ public class PipeRealtimePriorityBlockingQueue extends UnboundedBlockingPendingQ
     Event event = null;
     if (eventCount.get() >= realTimeEventConsumeThreshold) {
       event = tsfileInsertEventDeque.pollFirst();
-      if (event != null) {
-        eventCount.set(0);
-      }
+      eventCount.set(0);
     }
     if (event == null && !super.isEmpty()) {
       // Sequentially poll the first offered non-TsFileInsertionEvent
