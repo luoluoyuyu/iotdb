@@ -711,7 +711,8 @@ public class TestUtils {
           .untilAsserted(
               () -> {
                 try {
-                  System.out.println(executeQueryWithRetry(statement, sql).getMetaData().getColumnCount());
+                  System.out.println(
+                      executeQueryWithRetry(statement, sql).getMetaData().getColumnCount());
                   System.out.println(expectedResSet.size());
                   TestUtils.assertResultSetEqual(
                       executeQueryWithRetry(statement, sql), expectedHeader, expectedResSet);
