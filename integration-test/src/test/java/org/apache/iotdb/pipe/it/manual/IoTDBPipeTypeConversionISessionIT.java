@@ -66,14 +66,14 @@ import static org.junit.Assert.fail;
 public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT {
   private static final int generateDataSize = 100;
 
-  @Test
-  public void insertTablet() {
-    prepareTypeConversionTest(
-        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
-          senderSession.insertTablet(tablet);
-        },
-        false);
-  }
+  //  @Test
+  //  public void insertTablet() {
+  //    prepareTypeConversionTest(
+  //        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
+  //          senderSession.insertTablet(tablet);
+  //        },
+  //        false);
+  //  }
 
   //  @Test
   //  public void insertTabletReceiveByTsFile() {
@@ -252,19 +252,20 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT 
   //        false);
   //  }
   //
-  //  @Test
-  //  public void insertStringRecordsOfOneDeviceReceiveByTsFile() {
-  //    prepareTypeConversionTest(
-  //        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
-  //          List<Long> timestamps = getTimestampList(tablet);
-  //          Pair<List<List<String>>, List<List<TSDataType>>> pair =
-  //              getMeasurementSchemasAndType(tablet);
-  //          List<List<String>> values = generateTabletInsertStrRecordForTable(tablet);
-  //          senderSession.insertStringRecordsOfOneDevice(
-  //              tablet.getDeviceId(), timestamps, pair.left, values);
-  //        },
-  //        true);
-  //  }
+  @Test
+  public void insertStringRecordsOfOneDeviceReceiveByTsFile() {
+    prepareTypeConversionTest(
+        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
+          List<Long> timestamps = getTimestampList(tablet);
+          Pair<List<List<String>>, List<List<TSDataType>>> pair =
+              getMeasurementSchemasAndType(tablet);
+          List<List<String>> values = generateTabletInsertStrRecordForTable(tablet);
+          senderSession.insertStringRecordsOfOneDevice(
+              tablet.getDeviceId(), timestamps, pair.left, values);
+        },
+        true);
+  }
+
   //
   //  @Test
   //  public void insertAlignedStringRecordsOfOneDevice() {
@@ -379,6 +380,7 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT 
             receiverEnv.getIP(),
             receiverEnv.getPort(),
             isTSFile ? "tsfile" : "tablet");
+    System.out.println(sql);
     TestUtils.tryExecuteNonQueriesWithRetry(senderEnv, Collections.singletonList(sql));
   }
 
