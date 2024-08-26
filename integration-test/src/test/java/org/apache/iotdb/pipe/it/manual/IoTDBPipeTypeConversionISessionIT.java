@@ -66,192 +66,192 @@ import static org.junit.Assert.fail;
 public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT {
   private static final int generateDataSize = 100;
 
-  //  @Test
-  //  public void insertTablet() {
-  //    prepareTypeConversionTest(
-  //        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
-  //          senderSession.insertTablet(tablet);
-  //        },
-  //        false);
-  //  }
+  @Test
+  public void insertTablet() {
+    prepareTypeConversionTest(
+        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
+          senderSession.insertTablet(tablet);
+        },
+        false);
+  }
 
-  //  @Test
-  //  public void insertTabletReceiveByTsFile() {
-  //    prepareTypeConversionTest(
-  //        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
-  //          senderSession.insertTablet(tablet);
-  //        },
-  //        true);
-  //  }
-  //
-  //  @Test
-  //  public void insertAlignedTablet() {
-  //    prepareTypeConversionTest(
-  //        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
-  //          senderSession.insertAlignedTablet(tablet);
-  //        },
-  //        false);
-  //  }
-  //
-  //  @Test
-  //  public void insertAlignedTabletReceiveByTsFile() {
-  //    prepareTypeConversionTest(
-  //        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
-  //          senderSession.insertAlignedTablet(tablet);
-  //        },
-  //        true);
-  //  }
-  //
-  //  @Test
-  //  public void insertRecordsReceiveByTsFile() {
-  //    prepareTypeConversionTest(
-  //        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
-  //          List<Long> timestamps = getTimestampList(tablet);
-  //          Pair<List<List<String>>, List<List<TSDataType>>> pair =
-  //              getMeasurementSchemasAndType(tablet);
-  //          List<List<Object>> values = generateTabletInsertRecordForTable(tablet);
-  //          senderSession.insertRecords(
-  //              getDeviceID(tablet), timestamps, pair.left, pair.right, values);
-  //        },
-  //        true);
-  //  }
-  //
-  //  @Test
-  //  public void insertRecord() {
-  //    prepareTypeConversionTest(
-  //        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
-  //          List<Long> timestamps = getTimestampList(tablet);
-  //          Pair<List<List<String>>, List<List<TSDataType>>> pair =
-  //              getMeasurementSchemasAndType(tablet);
-  //          List<List<Object>> values = generateTabletInsertRecordForTable(tablet);
-  //          for (int i = 0; i < values.size(); i++) {
-  //            senderSession.insertRecord(
-  //                tablet.getDeviceId(),
-  //                timestamps.get(i),
-  //                pair.left.get(i),
-  //                pair.right.get(i),
-  //                values.get(i).toArray());
-  //          }
-  //        },
-  //        false);
-  //  }
-  //
-  //  @Test
-  //  public void insertRecordReceiveByTsFile() {
-  //    prepareTypeConversionTest(
-  //        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
-  //          List<Long> timestamps = getTimestampList(tablet);
-  //          Pair<List<List<String>>, List<List<TSDataType>>> pair =
-  //              getMeasurementSchemasAndType(tablet);
-  //          List<List<Object>> values = generateTabletInsertRecordForTable(tablet);
-  //          for (int i = 0; i < values.size(); i++) {
-  //            senderSession.insertRecord(
-  //                tablet.getDeviceId(),
-  //                timestamps.get(i),
-  //                pair.left.get(i),
-  //                pair.right.get(i),
-  //                values.get(i).toArray());
-  //          }
-  //        },
-  //        true);
-  //  }
-  //
-  //  @Test
-  //  public void insertAlignedRecord() {
-  //    prepareTypeConversionTest(
-  //        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
-  //          List<Long> timestamps = getTimestampList(tablet);
-  //          Pair<List<List<String>>, List<List<TSDataType>>> pair =
-  //              getMeasurementSchemasAndType(tablet);
-  //          List<List<Object>> values = generateTabletInsertRecordForTable(tablet);
-  //          for (int i = 0; i < values.size(); i++) {
-  //            senderSession.insertAlignedRecord(
-  //                tablet.getDeviceId(),
-  //                timestamps.get(i),
-  //                pair.left.get(i),
-  //                pair.right.get(i),
-  //                values.get(i));
-  //          }
-  //        },
-  //        false);
-  //  }
-  //
-  //  @Test
-  //  public void insertAlignedRecordReceiveByTsFile() {
-  //    prepareTypeConversionTest(
-  //        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
-  //          List<Long> timestamps = getTimestampList(tablet);
-  //          Pair<List<List<String>>, List<List<TSDataType>>> pair =
-  //              getMeasurementSchemasAndType(tablet);
-  //          List<List<Object>> values = generateTabletInsertRecordForTable(tablet);
-  //          for (int i = 0; i < values.size(); i++) {
-  //            senderSession.insertAlignedRecord(
-  //                tablet.getDeviceId(),
-  //                timestamps.get(i),
-  //                pair.left.get(i),
-  //                pair.right.get(i),
-  //                values.get(i));
-  //          }
-  //        },
-  //        true);
-  //  }
-  //
-  //  @Test
-  //  public void insertRecords() {
-  //    prepareTypeConversionTest(
-  //        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
-  //          List<Long> timestamps = getTimestampList(tablet);
-  //          Pair<List<List<String>>, List<List<TSDataType>>> pair =
-  //              getMeasurementSchemasAndType(tablet);
-  //          List<List<Object>> values = generateTabletInsertRecordForTable(tablet);
-  //          senderSession.insertRecords(
-  //              getDeviceID(tablet), timestamps, pair.left, pair.right, values);
-  //        },
-  //        false);
-  //  }
-  //
-  //  @Test
-  //  public void insertAlignedRecords() {
-  //    prepareTypeConversionTest(
-  //        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
-  //          List<Long> timestamps = getTimestampList(tablet);
-  //          Pair<List<List<String>>, List<List<TSDataType>>> pair =
-  //              getMeasurementSchemasAndType(tablet);
-  //          List<List<Object>> values = generateTabletInsertRecordForTable(tablet);
-  //          senderSession.insertAlignedRecords(
-  //              getDeviceID(tablet), timestamps, pair.left, pair.right, values);
-  //        },
-  //        false);
-  //  }
-  //
-  //  @Test
-  //  public void insertAlignedRecordsReceiveByTsFile() {
-  //    prepareTypeConversionTest(
-  //        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
-  //          List<Long> timestamps = getTimestampList(tablet);
-  //          Pair<List<List<String>>, List<List<TSDataType>>> pair =
-  //              getMeasurementSchemasAndType(tablet);
-  //          List<List<Object>> values = generateTabletInsertRecordForTable(tablet);
-  //          senderSession.insertAlignedRecords(
-  //              getDeviceID(tablet), timestamps, pair.left, pair.right, values);
-  //        },
-  //        true);
-  //  }
-  //
-  //  @Test
-  //  public void insertStringRecordsOfOneDevice() {
-  //    prepareTypeConversionTest(
-  //        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
-  //          List<Long> timestamps = getTimestampList(tablet);
-  //          Pair<List<List<String>>, List<List<TSDataType>>> pair =
-  //              getMeasurementSchemasAndType(tablet);
-  //          List<List<String>> values = generateTabletInsertStrRecordForTable(tablet);
-  //          senderSession.insertStringRecordsOfOneDevice(
-  //              tablet.getDeviceId(), timestamps, pair.left, values);
-  //        },
-  //        false);
-  //  }
-  //
+  @Test
+  public void insertTabletReceiveByTsFile() {
+    prepareTypeConversionTest(
+        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
+          senderSession.insertTablet(tablet);
+        },
+        true);
+  }
+
+  @Test
+  public void insertAlignedTablet() {
+    prepareTypeConversionTest(
+        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
+          senderSession.insertAlignedTablet(tablet);
+        },
+        false);
+  }
+
+  @Test
+  public void insertAlignedTabletReceiveByTsFile() {
+    prepareTypeConversionTest(
+        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
+          senderSession.insertAlignedTablet(tablet);
+        },
+        true);
+  }
+
+  @Test
+  public void insertRecordsReceiveByTsFile() {
+    prepareTypeConversionTest(
+        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
+          List<Long> timestamps = getTimestampList(tablet);
+          Pair<List<List<String>>, List<List<TSDataType>>> pair =
+              getMeasurementSchemasAndType(tablet);
+          List<List<Object>> values = generateTabletInsertRecordForTable(tablet);
+          senderSession.insertRecords(
+              getDeviceID(tablet), timestamps, pair.left, pair.right, values);
+        },
+        true);
+  }
+
+  @Test
+  public void insertRecord() {
+    prepareTypeConversionTest(
+        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
+          List<Long> timestamps = getTimestampList(tablet);
+          Pair<List<List<String>>, List<List<TSDataType>>> pair =
+              getMeasurementSchemasAndType(tablet);
+          List<List<Object>> values = generateTabletInsertRecordForTable(tablet);
+          for (int i = 0; i < values.size(); i++) {
+            senderSession.insertRecord(
+                tablet.getDeviceId(),
+                timestamps.get(i),
+                pair.left.get(i),
+                pair.right.get(i),
+                values.get(i).toArray());
+          }
+        },
+        false);
+  }
+
+  @Test
+  public void insertRecordReceiveByTsFile() {
+    prepareTypeConversionTest(
+        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
+          List<Long> timestamps = getTimestampList(tablet);
+          Pair<List<List<String>>, List<List<TSDataType>>> pair =
+              getMeasurementSchemasAndType(tablet);
+          List<List<Object>> values = generateTabletInsertRecordForTable(tablet);
+          for (int i = 0; i < values.size(); i++) {
+            senderSession.insertRecord(
+                tablet.getDeviceId(),
+                timestamps.get(i),
+                pair.left.get(i),
+                pair.right.get(i),
+                values.get(i).toArray());
+          }
+        },
+        true);
+  }
+
+  @Test
+  public void insertAlignedRecord() {
+    prepareTypeConversionTest(
+        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
+          List<Long> timestamps = getTimestampList(tablet);
+          Pair<List<List<String>>, List<List<TSDataType>>> pair =
+              getMeasurementSchemasAndType(tablet);
+          List<List<Object>> values = generateTabletInsertRecordForTable(tablet);
+          for (int i = 0; i < values.size(); i++) {
+            senderSession.insertAlignedRecord(
+                tablet.getDeviceId(),
+                timestamps.get(i),
+                pair.left.get(i),
+                pair.right.get(i),
+                values.get(i));
+          }
+        },
+        false);
+  }
+
+  @Test
+  public void insertAlignedRecordReceiveByTsFile() {
+    prepareTypeConversionTest(
+        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
+          List<Long> timestamps = getTimestampList(tablet);
+          Pair<List<List<String>>, List<List<TSDataType>>> pair =
+              getMeasurementSchemasAndType(tablet);
+          List<List<Object>> values = generateTabletInsertRecordForTable(tablet);
+          for (int i = 0; i < values.size(); i++) {
+            senderSession.insertAlignedRecord(
+                tablet.getDeviceId(),
+                timestamps.get(i),
+                pair.left.get(i),
+                pair.right.get(i),
+                values.get(i));
+          }
+        },
+        true);
+  }
+
+  @Test
+  public void insertRecords() {
+    prepareTypeConversionTest(
+        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
+          List<Long> timestamps = getTimestampList(tablet);
+          Pair<List<List<String>>, List<List<TSDataType>>> pair =
+              getMeasurementSchemasAndType(tablet);
+          List<List<Object>> values = generateTabletInsertRecordForTable(tablet);
+          senderSession.insertRecords(
+              getDeviceID(tablet), timestamps, pair.left, pair.right, values);
+        },
+        false);
+  }
+
+  @Test
+  public void insertAlignedRecords() {
+    prepareTypeConversionTest(
+        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
+          List<Long> timestamps = getTimestampList(tablet);
+          Pair<List<List<String>>, List<List<TSDataType>>> pair =
+              getMeasurementSchemasAndType(tablet);
+          List<List<Object>> values = generateTabletInsertRecordForTable(tablet);
+          senderSession.insertAlignedRecords(
+              getDeviceID(tablet), timestamps, pair.left, pair.right, values);
+        },
+        false);
+  }
+
+  @Test
+  public void insertAlignedRecordsReceiveByTsFile() {
+    prepareTypeConversionTest(
+        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
+          List<Long> timestamps = getTimestampList(tablet);
+          Pair<List<List<String>>, List<List<TSDataType>>> pair =
+              getMeasurementSchemasAndType(tablet);
+          List<List<Object>> values = generateTabletInsertRecordForTable(tablet);
+          senderSession.insertAlignedRecords(
+              getDeviceID(tablet), timestamps, pair.left, pair.right, values);
+        },
+        true);
+  }
+
+  @Test
+  public void insertStringRecordsOfOneDevice() {
+    prepareTypeConversionTest(
+        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
+          List<Long> timestamps = getTimestampList(tablet);
+          Pair<List<List<String>>, List<List<TSDataType>>> pair =
+              getMeasurementSchemasAndType(tablet);
+          List<List<String>> values = generateTabletInsertStrRecordForTable(tablet);
+          senderSession.insertStringRecordsOfOneDevice(
+              tablet.getDeviceId(), timestamps, pair.left, values);
+        },
+        false);
+  }
+
   @Test
   public void insertStringRecordsOfOneDeviceReceiveByTsFile() {
     prepareTypeConversionTest(
@@ -266,34 +266,33 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT 
         true);
   }
 
-  //
-  //  @Test
-  //  public void insertAlignedStringRecordsOfOneDevice() {
-  //    prepareTypeConversionTest(
-  //        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
-  //          List<Long> timestamps = getTimestampList(tablet);
-  //          Pair<List<List<String>>, List<List<TSDataType>>> pair =
-  //              getMeasurementSchemasAndType(tablet);
-  //          List<List<String>> values = generateTabletInsertStrRecordForTable(tablet);
-  //          senderSession.insertAlignedStringRecordsOfOneDevice(
-  //              tablet.getDeviceId(), timestamps, pair.left, values);
-  //        },
-  //        false);
-  //  }
-  //
-  //  @Test
-  //  public void insertAlignedStringRecordsOfOneDeviceReceiveByTsFile() {
-  //    prepareTypeConversionTest(
-  //        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
-  //          List<Long> timestamps = getTimestampList(tablet);
-  //          Pair<List<List<String>>, List<List<TSDataType>>> pair =
-  //              getMeasurementSchemasAndType(tablet);
-  //          List<List<String>> values = generateTabletInsertStrRecordForTable(tablet);
-  //          senderSession.insertAlignedStringRecordsOfOneDevice(
-  //              tablet.getDeviceId(), timestamps, pair.left, values);
-  //        },
-  //        true);
-  //  }
+  @Test
+  public void insertAlignedStringRecordsOfOneDevice() {
+    prepareTypeConversionTest(
+        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
+          List<Long> timestamps = getTimestampList(tablet);
+          Pair<List<List<String>>, List<List<TSDataType>>> pair =
+              getMeasurementSchemasAndType(tablet);
+          List<List<String>> values = generateTabletInsertStrRecordForTable(tablet);
+          senderSession.insertAlignedStringRecordsOfOneDevice(
+              tablet.getDeviceId(), timestamps, pair.left, values);
+        },
+        false);
+  }
+
+  @Test
+  public void insertAlignedStringRecordsOfOneDeviceReceiveByTsFile() {
+    prepareTypeConversionTest(
+        (ISession senderSession, ISession receiverSession, Tablet tablet) -> {
+          List<Long> timestamps = getTimestampList(tablet);
+          Pair<List<List<String>>, List<List<TSDataType>>> pair =
+              getMeasurementSchemasAndType(tablet);
+          List<List<String>> values = generateTabletInsertStrRecordForTable(tablet);
+          senderSession.insertAlignedStringRecordsOfOneDevice(
+              tablet.getDeviceId(), timestamps, pair.left, values);
+        },
+        true);
+  }
 
   private SessionDataSet query(
       ISession session, List<IMeasurementSchema> measurementSchemas, String deviceId)
