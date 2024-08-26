@@ -642,6 +642,7 @@ public class ArrayConverter {
           final int[] dateValues = new int[timestampValues.length];
           for (int i = 0; i < timestampValues.length; i++) {
             dateValues[i] = ValueConverter.convertTimestampToDate(timestampValues[i]);
+            System.out.println(dateValues[i]);
           }
           return dateValues;
         };
@@ -651,6 +652,7 @@ public class ArrayConverter {
           final Binary[] blobValues = new Binary[timestampValues.length];
           for (int i = 0; i < timestampValues.length; i++) {
             blobValues[i] = ValueConverter.convertTimestampToBlob(timestampValues[i]);
+            System.out.println(blobValues[i]);
           }
           return blobValues;
         };
@@ -660,6 +662,7 @@ public class ArrayConverter {
           final Binary[] stringValues = new Binary[timestampValues.length];
           for (int i = 0; i < timestampValues.length; i++) {
             stringValues[i] = ValueConverter.convertTimestampToString(timestampValues[i]);
+            System.out.println(stringValues[i]);
           }
           return stringValues;
         };
@@ -671,6 +674,7 @@ public class ArrayConverter {
           final boolean[] boolValues = new boolean[dateValues.length];
           for (int i = 0; i < dateValues.length; i++) {
             boolValues[i] = ValueConverter.convertDateToBoolean(dateValues[i]);
+            System.out.println(boolValues[i]);
           }
           return boolValues;
         };
@@ -680,6 +684,7 @@ public class ArrayConverter {
           final int[] intValues = new int[dateValues.length];
           for (int i = 0; i < dateValues.length; i++) {
             intValues[i] = ValueConverter.convertDateToInt32(dateValues[i]);
+            System.out.println(intValues[i]);
           }
           return intValues;
         };
@@ -689,6 +694,7 @@ public class ArrayConverter {
           final long[] longValues = new long[dateValues.length];
           for (int i = 0; i < dateValues.length; i++) {
             longValues[i] = ValueConverter.convertDateToInt64(dateValues[i]);
+            System.out.println(longValues[i]);
           }
           return longValues;
         };
@@ -698,6 +704,7 @@ public class ArrayConverter {
           final float[] floatValues = new float[dateValues.length];
           for (int i = 0; i < dateValues.length; i++) {
             floatValues[i] = ValueConverter.convertDateToFloat(dateValues[i]);
+            System.out.println(floatValues[i]);
           }
           return floatValues;
         };
@@ -707,6 +714,7 @@ public class ArrayConverter {
           final double[] doubleValues = new double[dateValues.length];
           for (int i = 0; i < dateValues.length; i++) {
             doubleValues[i] = ValueConverter.convertDateToDouble(dateValues[i]);
+            System.out.println(doubleValues[i]);
           }
           return doubleValues;
         };
@@ -716,6 +724,7 @@ public class ArrayConverter {
           final Binary[] textValues = new Binary[dateValues.length];
           for (int i = 0; i < dateValues.length; i++) {
             textValues[i] = ValueConverter.convertDateToText(dateValues[i]);
+            System.out.println(textValues[i]);
           }
           return textValues;
         };
@@ -727,6 +736,7 @@ public class ArrayConverter {
           final long[] timestampValues = new long[dateValues.length];
           for (int i = 0; i < dateValues.length; i++) {
             timestampValues[i] = ValueConverter.convertDateToTimestamp(dateValues[i]);
+            System.out.println(timestampValues[i]);
           }
           return timestampValues;
         };
@@ -738,6 +748,7 @@ public class ArrayConverter {
           final Binary[] blobValues = new Binary[dateValues.length];
           for (int i = 0; i < dateValues.length; i++) {
             blobValues[i] = ValueConverter.convertDateToBlob(dateValues[i]);
+            System.out.println(blobValues[i]);
           }
           return blobValues;
         };
@@ -747,6 +758,7 @@ public class ArrayConverter {
           final Binary[] stringValues = new Binary[dateValues.length];
           for (int i = 0; i < dateValues.length; i++) {
             stringValues[i] = ValueConverter.convertDateToString(dateValues[i]);
+            System.out.println(stringValues[i]);
           }
           return stringValues;
         };
@@ -758,6 +770,7 @@ public class ArrayConverter {
           final boolean[] boolValues = new boolean[blobValues.length];
           for (int i = 0; i < blobValues.length; i++) {
             boolValues[i] = ValueConverter.convertBlobToBoolean(blobValues[i]);
+            System.out.println(boolValues[i]);
           }
           return boolValues;
         };
@@ -767,6 +780,7 @@ public class ArrayConverter {
           final int[] intValues = new int[blobValues.length];
           for (int i = 0; i < blobValues.length; i++) {
             intValues[i] = ValueConverter.convertBlobToInt32(blobValues[i]);
+            System.out.println(intValues[i]);
           }
           return intValues;
         };
@@ -776,6 +790,7 @@ public class ArrayConverter {
           final long[] longValues = new long[blobValues.length];
           for (int i = 0; i < blobValues.length; i++) {
             longValues[i] = ValueConverter.convertBlobToInt64(blobValues[i]);
+            System.out.println(longValues[i]);
           }
           return longValues;
         };
@@ -785,6 +800,7 @@ public class ArrayConverter {
           final float[] floatValues = new float[blobValues.length];
           for (int i = 0; i < blobValues.length; i++) {
             floatValues[i] = ValueConverter.convertBlobToFloat(blobValues[i]);
+            System.out.println(floatValues[i]);
           }
           return floatValues;
         };
@@ -794,6 +810,7 @@ public class ArrayConverter {
           final double[] doubleValues = new double[blobValues.length];
           for (int i = 0; i < blobValues.length; i++) {
             doubleValues[i] = ValueConverter.convertBlobToDouble(blobValues[i]);
+            System.out.println(doubleValues[i]);
           }
           return doubleValues;
         };
@@ -803,6 +820,7 @@ public class ArrayConverter {
           final Binary[] textValues = new Binary[blobValues.length];
           for (int i = 0; i < blobValues.length; i++) {
             textValues[i] = ValueConverter.convertBlobToText(blobValues[i]);
+            System.out.println(textValues[i]);
           }
           return textValues;
         };
@@ -814,6 +832,7 @@ public class ArrayConverter {
           final long[] timestampValues = new long[blobValues.length];
           for (int i = 0; i < blobValues.length; i++) {
             timestampValues[i] = ValueConverter.convertBlobToTimestamp(blobValues[i]);
+            System.out.println(timestampValues[i]);
           }
           return timestampValues;
         };
@@ -823,6 +842,7 @@ public class ArrayConverter {
           final int[] dateValues = new int[blobValues.length];
           for (int i = 0; i < blobValues.length; i++) {
             dateValues[i] = ValueConverter.convertBlobToDate(blobValues[i]);
+            System.out.println(dateValues[i]);
           }
           return dateValues;
         };
@@ -834,6 +854,7 @@ public class ArrayConverter {
           final Binary[] stringValues = new Binary[blobValues.length];
           for (int i = 0; i < blobValues.length; i++) {
             stringValues[i] = ValueConverter.convertBlobToString(blobValues[i]);
+            System.out.println(stringValues[i]);
           }
           return stringValues;
         };
@@ -845,6 +866,7 @@ public class ArrayConverter {
           final boolean[] boolValues = new boolean[stringValues.length];
           for (int i = 0; i < stringValues.length; i++) {
             boolValues[i] = ValueConverter.convertStringToBoolean(stringValues[i]);
+            System.out.println(boolValues[i]);
           }
           return boolValues;
         };
@@ -854,6 +876,7 @@ public class ArrayConverter {
           final int[] intValues = new int[stringValues.length];
           for (int i = 0; i < stringValues.length; i++) {
             intValues[i] = ValueConverter.convertStringToInt32(stringValues[i]);
+            System.out.println(intValues[i]);
           }
           return intValues;
         };
@@ -863,6 +886,7 @@ public class ArrayConverter {
           final long[] longValues = new long[stringValues.length];
           for (int i = 0; i < stringValues.length; i++) {
             longValues[i] = ValueConverter.convertStringToInt64(stringValues[i]);
+            System.out.println(longValues[i]);
           }
           return longValues;
         };
@@ -872,6 +896,7 @@ public class ArrayConverter {
           final float[] floatValues = new float[stringValues.length];
           for (int i = 0; i < stringValues.length; i++) {
             floatValues[i] = ValueConverter.convertStringToFloat(stringValues[i]);
+            System.out.println(floatValues[i]);
           }
           return floatValues;
         };
@@ -881,6 +906,7 @@ public class ArrayConverter {
           final double[] doubleValues = new double[stringValues.length];
           for (int i = 0; i < stringValues.length; i++) {
             doubleValues[i] = ValueConverter.convertStringToDouble(stringValues[i]);
+            System.out.println(doubleValues[i]);
           }
           return doubleValues;
         };
@@ -890,6 +916,7 @@ public class ArrayConverter {
           final Binary[] textValues = new Binary[stringValues.length];
           for (int i = 0; i < stringValues.length; i++) {
             textValues[i] = ValueConverter.convertStringToText(stringValues[i]);
+            System.out.println(textValues[i]);
           }
           return textValues;
         };
@@ -901,6 +928,7 @@ public class ArrayConverter {
           final long[] timestampValues = new long[stringValues.length];
           for (int i = 0; i < stringValues.length; i++) {
             timestampValues[i] = ValueConverter.convertStringToTimestamp(stringValues[i]);
+            System.out.println(timestampValues[i]);
           }
           return timestampValues;
         };
@@ -910,6 +938,7 @@ public class ArrayConverter {
           final int[] dateValues = new int[stringValues.length];
           for (int i = 0; i < stringValues.length; i++) {
             dateValues[i] = ValueConverter.convertStringToDate(stringValues[i]);
+            System.out.println(dateValues[i]);
           }
           return dateValues;
         };
@@ -919,6 +948,7 @@ public class ArrayConverter {
           final Binary[] blobValues = new Binary[stringValues.length];
           for (int i = 0; i < stringValues.length; i++) {
             blobValues[i] = ValueConverter.convertStringToBlob(stringValues[i]);
+            System.out.println(blobValues[i]);
           }
           return blobValues;
         };
@@ -928,6 +958,7 @@ public class ArrayConverter {
 
   public static Object convert(
       final TSDataType sourceDataType, final TSDataType targetDataType, final Object sourceValues) {
+    System.out.println(sourceValues);
     return sourceValues == null
         ? null
         : CONVERTER[sourceDataType.ordinal()][targetDataType.ordinal()].convert(

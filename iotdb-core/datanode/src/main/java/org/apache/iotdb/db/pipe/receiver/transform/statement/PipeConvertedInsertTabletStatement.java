@@ -23,6 +23,7 @@ import org.apache.iotdb.db.pipe.receiver.transform.converter.ArrayConverter;
 import org.apache.iotdb.db.queryengine.plan.statement.crud.InsertTabletStatement;
 
 import org.apache.tsfile.enums.TSDataType;
+import org.apache.tsfile.utils.BitMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +48,9 @@ public class PipeConvertedInsertTabletStatement extends InsertTabletStatement {
     bitMaps = insertTabletStatement.getBitMaps();
     columns = insertTabletStatement.getColumns();
     rowCount = insertTabletStatement.getRowCount();
+    for (BitMap bitMap : bitMaps) {
+      System.out.println("bitMap is " + bitMap.isAllUnmarked());
+    }
   }
 
   @Override
