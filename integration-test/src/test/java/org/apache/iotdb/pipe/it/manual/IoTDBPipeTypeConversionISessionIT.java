@@ -391,7 +391,6 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT 
     while (dataSet.hasNext()) {
       RowRecord record = dataSet.next();
       List<Field> fields = record.getFields();
-
       assertEquals(record.getTimestamp(), timestamps[index]);
       List<Object> rowValues = values.get(index++);
       assertEquals(rowValues.size(), fields.size());
