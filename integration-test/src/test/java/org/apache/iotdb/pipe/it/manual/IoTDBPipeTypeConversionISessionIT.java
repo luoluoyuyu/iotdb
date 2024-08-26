@@ -397,7 +397,7 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT 
       int i = 0;
       for (; i < fields.size(); i++) {
         Field field = fields.get(i);
-        System.out.println(field);
+        System.out.println(field.getDataType());
         if (field.getDataType() == null) {
           continue;
         }
