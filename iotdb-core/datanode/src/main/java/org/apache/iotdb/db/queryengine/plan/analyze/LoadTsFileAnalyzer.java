@@ -614,6 +614,10 @@ public class LoadTsFileAnalyzer implements AutoCloseable {
         // check timeseries schema
         final List<IMeasurementSchema> iotdbTimeseriesSchemas =
             iotdbDeviceSchemaInfo.getMeasurementSchemaList();
+        for (IMeasurementSchema iSchema : tsfileTimeseriesSchemas) {
+          System.out.print(iSchema.getMeasurementId() + " ");
+        }
+        System.out.println();
         for (int i = 0, n = iotdbTimeseriesSchemas.size(); i < n; i++) {
           final IMeasurementSchema tsFileSchema = tsfileTimeseriesSchemas.get(i);
           final IMeasurementSchema iotdbSchema = iotdbTimeseriesSchemas.get(i);

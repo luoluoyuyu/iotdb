@@ -519,4 +519,54 @@ public class InsertTabletStatement extends InsertBaseStatement implements ISchem
     CommonUtils.swapArray(columns, src, target);
     deviceIDs = null;
   }
+
+  @Override
+  public String toString() {
+    return "InsertTabletStatement{"
+        + "times="
+        + Arrays.toString(times)
+        + ", bitMaps="
+        + Arrays.toString(bitMaps)
+        + ", columns="
+        + Arrays.toString(columns)
+        + ", deviceIDs="
+        + Arrays.toString(deviceIDs)
+        + ", rowCount="
+        + rowCount
+        + ", measurementIsAligned="
+        + Arrays.toString(measurementIsAligned)
+        + ", devicePath="
+        + devicePath
+        + ", isAligned="
+        + isAligned
+        + ", measurementSchemas="
+        + Arrays.toString(measurementSchemas)
+        + ", measurements="
+        + Arrays.toString(measurements)
+        + ", dataTypes="
+        + Arrays.toString(dataTypes)
+        + ", failedMeasurementIndex2Info="
+        + failedMeasurementIndex2Info
+        + ", columnCategories="
+        + Arrays.toString(columnCategories)
+        + ", idColumnIndices="
+        + idColumnIndices
+        + ", attrColumnIndices="
+        + attrColumnIndices
+        + ", writeToTable="
+        + writeToTable
+        + ", logicalViewSchemaList="
+        + logicalViewSchemaList
+        + ", indexOfSourcePathsOfLogicalViews="
+        + indexOfSourcePathsOfLogicalViews
+        + ", recordedBeginOfLogicalViewSchemaList="
+        + recordedBeginOfLogicalViewSchemaList
+        + ", recordedEndOfLogicalViewSchemaList="
+        + recordedEndOfLogicalViewSchemaList
+        + ", statementType="
+        + statementType
+        + ", isDebug="
+        + isDebug
+        + '}';
+  }
 }

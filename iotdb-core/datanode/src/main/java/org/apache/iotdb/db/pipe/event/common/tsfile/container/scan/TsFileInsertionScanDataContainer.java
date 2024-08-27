@@ -105,6 +105,9 @@ public class TsFileInsertionScanDataContainer extends TsFileInsertionDataContain
       close();
       throw e;
     }
+    for (IMeasurementSchema schema : currentMeasurements) {
+      System.out.println(schema.getType());
+    }
   }
 
   @Override

@@ -38,7 +38,9 @@ import org.apache.iotdb.db.queryengine.plan.statement.crud.LoadTsFileStatement;
 import org.apache.iotdb.rpc.TSStatusCode;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.tsfile.utils.BitMap;
 import org.apache.tsfile.write.record.Tablet;
+import org.apache.tsfile.write.schema.IMeasurementSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,6 +100,24 @@ public class PipeStatementDataTypeConvertExecutionVisitor
           new TsFileInsertionScanDataContainer(
               file, new IoTDBPipePattern(null), Long.MIN_VALUE, Long.MAX_VALUE, null, null)) {
         for (final Tablet tablet : container.toTablets()) {
+          System.out.println();
+          System.out.println("bitMap.size:" + tablet.bitMaps.length);
+          for (BitMap bitMap : tablet.bitMaps) {
+            System.out.println("bitMapSize:" + bitMap.getSize());
+            System.out.println("bitMap:" + bitMap);
+          }
+          for (IMeasurementSchema i : tablet.getSchemas()) {
+            System.out.print("measurementId:" + i.getMeasurementId() + " ");
+          }
+          System.out.println();
+          for (Object i : tablet.values) {
+            System.out.print("className:" + i.getClass().getName() + " ");
+          }
+          System.out.println();
+          System.out.println(
+              "InsertTabletStatement:"
+                  + PipeTransferTabletRawReq.toTPipeTransferRawReq(tablet, false)
+                      .constructStatement());
           final PipeConvertedInsertTabletStatement statement =
               new PipeConvertedInsertTabletStatement(
                   PipeTransferTabletRawReq.toTPipeTransferRawReq(tablet, false)
@@ -106,11 +126,13 @@ public class PipeStatementDataTypeConvertExecutionVisitor
 
           // Retry once if the write process is rejected
           if (result.getCode() == TSStatusCode.WRITE_PROCESS_REJECT.getStatusCode()) {
+            System.out.println(TSStatusCode.WRITE_PROCESS_REJECT.getStatusCode());
             result = statementExecutor.execute(statement);
           }
 
           if (!(result.getCode() == TSStatusCode.SUCCESS_STATUS.getStatusCode()
               || result.getCode() == TSStatusCode.REDIRECTION_RECOMMEND.getStatusCode())) {
+            System.out.println(result.getCode());
             return Optional.empty();
           }
         }
@@ -189,6 +211,7 @@ public class PipeStatementDataTypeConvertExecutionVisitor
   @Override
   public Optional<TSStatus> visitInsertTablet(
       final InsertTabletStatement insertTabletStatement, final TSStatus status) {
+    System.out.println(insertTabletStatement);
     return status.getCode() == TSStatusCode.METADATA_ERROR.getStatusCode()
             && status.getMessage() != null
             && status.getMessage().contains(DataTypeMismatchException.REGISTERED_TYPE_STRING)

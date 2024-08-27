@@ -336,6 +336,8 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT 
       }
       List<List<Object>> expectedValues =
           generateTabletResultSetForTable(tablet, measurementSchemas);
+      System.out.println(tablet.bitMaps.length);
+      System.out.println(tablet.getSchemas().size());
       await()
           .pollInSameThread()
           .pollDelay(1L, TimeUnit.SECONDS)
@@ -388,6 +390,7 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT 
       throws IoTDBConnectionException, StatementExecutionException {
     int index = 0;
     while (dataSet.hasNext()) {
+      System.out.println();
       RowRecord record = dataSet.next();
       List<Field> fields = record.getFields();
       assertEquals(record.getTimestamp(), timestamps[index]);
@@ -396,7 +399,7 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT 
       int i = 0;
       for (; i < fields.size(); i++) {
         Field field = fields.get(i);
-        System.out.println(field.getDataType());
+        System.out.print(field.getDataType() + " ");
         if (field.getDataType() == null) {
           continue;
         }
@@ -724,9 +727,9 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT 
     long[] timestamp = createTestDataForTimestamp();
     Object[] objects = new Object[pairs.size()];
     List<IMeasurementSchema> measurementSchemas = new ArrayList<>(pairs.size());
-    BitMap[] bitMaps = new BitMap[generateDataSize];
+    BitMap[] bitMaps = new BitMap[pairs.size()];
     for (int i = 0; i < bitMaps.length; i++) {
-      bitMaps[i] = new BitMap(pairs.size());
+      bitMaps[i] = new BitMap(generateDataSize);
     }
     List<Tablet.ColumnType> columnTypes = new ArrayList<>(pairs.size());
     for (int i = 0; i < objects.length; i++) {
