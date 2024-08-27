@@ -102,7 +102,7 @@ public class PipeStatementDataTypeConvertExecutionVisitor
         loadTsFileStatement);
     for (final File file : loadTsFileStatement.getTsFiles()) {
       try (final TsFileSequenceReader reader = new TsFileSequenceReader(file.getAbsolutePath())) {
-        // can be reused when constructing tsfile resource
+
         final TsFileSequenceReaderTimeseriesMetadataIterator timeseriesMetadataIterator =
             new TsFileSequenceReaderTimeseriesMetadataIterator(reader, true, 1);
         while (timeseriesMetadataIterator.hasNext()) {

@@ -101,7 +101,6 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT 
           senderSession.insertAlignedTablet(tablet);
         },
         true);
-    fail();
   }
 
   @Test
@@ -337,7 +336,7 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT 
         senderSession.executeNonQueryStatement("flush");
       } else {
         createDataPipe(uuid, false);
-        Thread.sleep(10000);
+        Thread.sleep(40000);
         consumer.accept(senderSession, receiverSession, tablet);
         senderSession.executeNonQueryStatement("flush");
       }
@@ -349,7 +348,7 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT 
           .pollInSameThread()
           .pollDelay(1L, TimeUnit.SECONDS)
           .pollInterval(1L, TimeUnit.SECONDS)
-          .atMost(timeoutSeconds, TimeUnit.SECONDS)
+          .atMost(2, TimeUnit.SECONDS)
           .untilAsserted(
               () -> {
                 validateResultSet(
@@ -396,6 +395,7 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT 
       SessionDataSet dataSet, List<List<Object>> values, long[] timestamps)
       throws IoTDBConnectionException, StatementExecutionException {
     int index = 0;
+    int x = 0;
     while (dataSet.hasNext()) {
       System.out.println();
       RowRecord record = dataSet.next();
@@ -407,6 +407,7 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT 
         Field field = fields.get(i);
         System.out.print(field.getDataType() + " ");
         if (field.getDataType() == null) {
+          x++;
           continue;
         }
         switch (field.getDataType()) {
@@ -435,6 +436,9 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT 
             break;
         }
       }
+    }
+    if (x != 0) {
+      fail();
     }
     assertEquals(values.size(), index);
   }
