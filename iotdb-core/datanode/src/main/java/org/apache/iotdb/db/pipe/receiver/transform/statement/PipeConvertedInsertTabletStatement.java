@@ -51,6 +51,7 @@ public class PipeConvertedInsertTabletStatement extends InsertTabletStatement {
     bitMaps = insertTabletStatement.getBitMaps();
     columns = insertTabletStatement.getColumns();
     rowCount = insertTabletStatement.getRowCount();
+    System.out.println(insertTabletStatement);
     for (BitMap bitMap : bitMaps) {
       System.out.println("bitMap is " + bitMap);
     }
