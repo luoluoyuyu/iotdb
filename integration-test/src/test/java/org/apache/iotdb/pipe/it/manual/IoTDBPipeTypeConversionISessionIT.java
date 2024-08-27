@@ -91,6 +91,7 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT 
           senderSession.insertAlignedTablet(tablet);
         },
         false);
+    fail();
   }
 
   @Test
@@ -100,6 +101,7 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT 
           senderSession.insertAlignedTablet(tablet);
         },
         true);
+    fail();
   }
 
   //  @Test
