@@ -122,6 +122,7 @@ public class PipeStatementDataTypeConvertExecutionVisitor
               new PipeConvertedInsertTabletStatement(
                   PipeTransferTabletRawReq.toTPipeTransferRawReq(tablet, false)
                       .constructStatement());
+          statement.setBitMaps(tablet.bitMaps);
           TSStatus result = statementExecutor.execute(statement);
 
           // Retry once if the write process is rejected
