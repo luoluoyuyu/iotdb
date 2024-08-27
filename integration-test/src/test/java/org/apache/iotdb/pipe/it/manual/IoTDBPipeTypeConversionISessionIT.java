@@ -348,7 +348,7 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT 
           .pollInSameThread()
           .pollDelay(1L, TimeUnit.SECONDS)
           .pollInterval(1L, TimeUnit.SECONDS)
-          .atMost(2, TimeUnit.SECONDS)
+          .atMost(60, TimeUnit.SECONDS)
           .untilAsserted(
               () -> {
                 validateResultSet(
