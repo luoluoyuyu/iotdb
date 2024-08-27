@@ -114,15 +114,10 @@ public class PipeStatementDataTypeConvertExecutionVisitor
             System.out.print("className:" + i.getClass().getName() + " ");
           }
           System.out.println();
-          System.out.println(
-              "InsertTabletStatement:"
-                  + PipeTransferTabletRawReq.toTPipeTransferRawReq(tablet, false)
-                      .constructStatement());
           final PipeConvertedInsertTabletStatement statement =
               new PipeConvertedInsertTabletStatement(
                   PipeTransferTabletRawReq.toTPipeTransferRawReq(tablet, false)
                       .constructStatement());
-          statement.setBitMaps(tablet.bitMaps);
           TSStatus result = statementExecutor.execute(statement);
 
           // Retry once if the write process is rejected

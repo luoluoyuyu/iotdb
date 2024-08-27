@@ -1010,6 +1010,8 @@ public class DataRegion implements IDataRegionForQuery {
     return noFailure;
   }
 
+  static int num = 0;
+
   /**
    * Insert a tablet into this database.
    *
@@ -1018,6 +1020,9 @@ public class DataRegion implements IDataRegionForQuery {
   @SuppressWarnings({"squid:S3776", "squid:S6541"}) // Suppress high Cognitive Complexity warning
   public void insertTablet(InsertTabletNode insertTabletNode)
       throws BatchProcessException, WriteProcessException {
+    System.out.println("num::::::::" + num);
+    System.out.println(Arrays.toString(insertTabletNode.getColumns()));
+    num++;
     StorageEngine.blockInsertionIfReject();
     long startTime = System.nanoTime();
     writeLock("insertTablet");
