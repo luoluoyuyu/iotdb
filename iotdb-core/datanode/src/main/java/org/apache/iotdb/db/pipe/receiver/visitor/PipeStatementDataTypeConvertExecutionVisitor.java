@@ -119,8 +119,11 @@ public class PipeStatementDataTypeConvertExecutionVisitor
 
       }
     }
-
+    System.out.println("load TSFileSize:" + loadTsFileStatement.getTsFiles().size());
+    int x = 0;
     for (final File file : loadTsFileStatement.getTsFiles()) {
+      System.out.println("loadFile:" + x);
+      x++;
       try (final TsFileInsertionScanDataContainer container =
           new TsFileInsertionScanDataContainer(
               file, new IoTDBPipePattern(null), Long.MIN_VALUE, Long.MAX_VALUE, null, null)) {
