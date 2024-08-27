@@ -38,6 +38,10 @@ import org.apache.iotdb.db.queryengine.plan.statement.crud.LoadTsFileStatement;
 import org.apache.iotdb.rpc.TSStatusCode;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.tsfile.file.metadata.IDeviceID;
+import org.apache.tsfile.file.metadata.TimeseriesMetadata;
+import org.apache.tsfile.read.TsFileSequenceReader;
+import org.apache.tsfile.read.TsFileSequenceReaderTimeseriesMetadataIterator;
 import org.apache.tsfile.utils.BitMap;
 import org.apache.tsfile.write.record.Tablet;
 import org.apache.tsfile.write.schema.IMeasurementSchema;
@@ -45,6 +49,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -94,7 +100,25 @@ public class PipeStatementDataTypeConvertExecutionVisitor
         "Data type mismatch detected (TSStatus: {}) for LoadTsFileStatement: {}. Start data type conversion.",
         status,
         loadTsFileStatement);
+    for (final File file : loadTsFileStatement.getTsFiles()) {
+      try (final TsFileSequenceReader reader = new TsFileSequenceReader(file.getAbsolutePath())) {
+        // can be reused when constructing tsfile resource
+        final TsFileSequenceReaderTimeseriesMetadataIterator timeseriesMetadataIterator =
+            new TsFileSequenceReaderTimeseriesMetadataIterator(reader, true, 1);
+        while (timeseriesMetadataIterator.hasNext()) {
+          for (Map.Entry<IDeviceID, List<TimeseriesMetadata>> entry :
+              timeseriesMetadataIterator.next().entrySet()) {
+            System.out.println("TSFile TimeseriesMetadataSize: " + entry.getValue().size());
+            for (TimeseriesMetadata metadata : entry.getValue()) {
+              System.out.print(metadata.getMeasurementId() + " ");
+            }
+          }
+          System.out.println();
+        }
+      } catch (Exception e) {
 
+      }
+    }
     for (final File file : loadTsFileStatement.getTsFiles()) {
       try (final TsFileInsertionScanDataContainer container =
           new TsFileInsertionScanDataContainer(
