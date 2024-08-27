@@ -119,6 +119,7 @@ public class PipeStatementDataTypeConvertExecutionVisitor
 
       }
     }
+
     for (final File file : loadTsFileStatement.getTsFiles()) {
       try (final TsFileInsertionScanDataContainer container =
           new TsFileInsertionScanDataContainer(
