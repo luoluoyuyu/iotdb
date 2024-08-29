@@ -187,6 +187,7 @@ public class TreeModelPlanner implements IPlanner {
             }
           }
           if (needRedirect) {
+            System.out.println("needRedirect before " + iAnalysis.getFailStatus().getCode());
             tsstatus.setCode(TSStatusCode.REDIRECTION_RECOMMEND.getStatusCode());
             tsstatus.setSubStatus(subStatus);
           }

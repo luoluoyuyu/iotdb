@@ -2910,18 +2910,21 @@ public class AnalyzeVisitor extends StatementVisitor<Analysis, MPPQueryContext> 
         analysis,
         insertRowsStatement,
         () -> SchemaValidator.validate(schemaFetcher, insertRowsStatement, context));
+    System.out.println("1FailStatus:::::::::::::::::::::::" + analysis.getFailStatus().getCode());
     InsertRowsStatement realInsertRowsStatement =
         (InsertRowsStatement) removeLogicalView(analysis, insertRowsStatement);
+    System.out.println("2FailStatus:::::::::::::::::::::::" + analysis.getFailStatus().getCode());
     if (analysis.isFinishQueryAfterAnalyze()) {
       return analysis;
     }
     analysis.setRealStatement(realInsertRowsStatement);
-
+    System.out.println("3FailStatus:::::::::::::::::::::::" + analysis.getFailStatus().getCode());
     AnalyzeUtils.analyzeDataPartition(
         analysis,
         AnalyzeUtils.computeTreeDataPartitionParams(realInsertRowsStatement, context),
         context.getSession().getUserName(),
         partitionFetcher::getOrCreateDataPartition);
+    System.out.println("4FailStatus:::::::::::::::::::::::" + analysis.getFailStatus().getCode());
     return analysis;
   }
 

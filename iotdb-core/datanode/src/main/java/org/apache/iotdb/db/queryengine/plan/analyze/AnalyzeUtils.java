@@ -70,7 +70,7 @@ public class AnalyzeUtils {
     context.setQueryType(QueryType.WRITE);
     insertBaseStatement.semanticCheck();
     validateSchema(analysis, insertBaseStatement, schemaValidation);
-
+    System.out.println(analysis.getFailStatus());
     InsertBaseStatement realStatement =
         removeLogicalView ? removeLogicalView(analysis, insertBaseStatement) : insertBaseStatement;
     if (analysis.isFinishQueryAfterAnalyze()) {
