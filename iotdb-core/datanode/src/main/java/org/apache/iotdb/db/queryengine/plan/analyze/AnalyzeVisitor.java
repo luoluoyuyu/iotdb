@@ -2910,21 +2910,37 @@ public class AnalyzeVisitor extends StatementVisitor<Analysis, MPPQueryContext> 
         analysis,
         insertRowsStatement,
         () -> SchemaValidator.validate(schemaFetcher, insertRowsStatement, context));
-    System.out.println("1FailStatus:::::::::::::::::::::::" + analysis.getFailStatus().getCode());
+    if (analysis.getFailStatus() != null) {
+      System.out.println("1FailStatus:::::::::::::::::::::::" + analysis.getFailStatus().getCode());
+    } else {
+      System.out.println("1FailStatus::::::::::::::::::::::: is null");
+    }
     InsertRowsStatement realInsertRowsStatement =
         (InsertRowsStatement) removeLogicalView(analysis, insertRowsStatement);
-    System.out.println("2FailStatus:::::::::::::::::::::::" + analysis.getFailStatus().getCode());
+    if (analysis.getFailStatus() != null) {
+      System.out.println("2FailStatus:::::::::::::::::::::::" + analysis.getFailStatus().getCode());
+    } else {
+      System.out.println("2FailStatus::::::::::::::::::::::: is null");
+    }
     if (analysis.isFinishQueryAfterAnalyze()) {
       return analysis;
     }
     analysis.setRealStatement(realInsertRowsStatement);
-    System.out.println("3FailStatus:::::::::::::::::::::::" + analysis.getFailStatus().getCode());
+    if (analysis.getFailStatus() != null) {
+      System.out.println("3FailStatus:::::::::::::::::::::::" + analysis.getFailStatus().getCode());
+    } else {
+      System.out.println("3FailStatus::::::::::::::::::::::: is null");
+    }
     AnalyzeUtils.analyzeDataPartition(
         analysis,
         AnalyzeUtils.computeTreeDataPartitionParams(realInsertRowsStatement, context),
         context.getSession().getUserName(),
         partitionFetcher::getOrCreateDataPartition);
-    System.out.println("4FailStatus:::::::::::::::::::::::" + analysis.getFailStatus().getCode());
+    if (analysis.getFailStatus() != null) {
+      System.out.println("4FailStatus:::::::::::::::::::::::" + analysis.getFailStatus().getCode());
+    } else {
+      System.out.println("4FailStatus::::::::::::::::::::::: is null");
+    }
     return analysis;
   }
 
