@@ -170,7 +170,8 @@ public class PipeStatementDataTypeConvertExecutionVisitor
         "1failedMeasurementsSize " + insertRowsStatement.getFailedMeasurements().size());
 
     if (!((status.getCode() == TSStatusCode.METADATA_ERROR.getStatusCode()
-            || status.getCode() == TSStatusCode.MULTIPLE_ERROR.getStatusCode())
+            || status.getCode() == TSStatusCode.MULTIPLE_ERROR.getStatusCode()
+            || status.getCode() == TSStatusCode.REDIRECTION_RECOMMEND.getStatusCode())
         && status.toString().contains(DataTypeMismatchException.REGISTERED_TYPE_STRING))) {
       System.out.println("code:::::::::::::::::::::::::::::::::" + status.getCode());
       return Optional.empty();
@@ -208,7 +209,8 @@ public class PipeStatementDataTypeConvertExecutionVisitor
     System.out.println("visitInsertRowsOfOneDevice");
     System.out.println("visitInsertRowsOfOneDevice");
     if (!((status.getCode() == TSStatusCode.METADATA_ERROR.getStatusCode()
-            || status.getCode() == TSStatusCode.MULTIPLE_ERROR.getStatusCode())
+            || status.getCode() == TSStatusCode.MULTIPLE_ERROR.getStatusCode()
+            || status.getCode() == TSStatusCode.REDIRECTION_RECOMMEND.getStatusCode())
         && status.toString().contains(DataTypeMismatchException.REGISTERED_TYPE_STRING))) {
       return Optional.empty();
     }
@@ -256,7 +258,8 @@ public class PipeStatementDataTypeConvertExecutionVisitor
     System.out.println("visitInsertMultiTablets");
     System.out.println("visitInsertMultiTablets");
     if (!((status.getCode() == TSStatusCode.METADATA_ERROR.getStatusCode()
-            || status.getCode() == TSStatusCode.MULTIPLE_ERROR.getStatusCode())
+            || status.getCode() == TSStatusCode.MULTIPLE_ERROR.getStatusCode()
+            || status.getCode() == TSStatusCode.REDIRECTION_RECOMMEND.getStatusCode())
         && status.toString().contains(DataTypeMismatchException.REGISTERED_TYPE_STRING))) {
       return Optional.empty();
     }
