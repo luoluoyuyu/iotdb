@@ -25,10 +25,13 @@ import org.apache.iotdb.commons.partition.DataPartition;
 import org.apache.iotdb.commons.partition.DataPartitionQueryParam;
 import org.apache.iotdb.commons.service.metric.PerformanceOverviewMetrics;
 import org.apache.iotdb.db.exception.sql.SemanticException;
+import org.apache.iotdb.db.pipe.receiver.transform.statement.PipeConvertedInsertRowStatement;
+import org.apache.iotdb.db.pipe.receiver.transform.statement.PipeConvertedInsertTabletStatement;
 import org.apache.iotdb.db.queryengine.common.MPPQueryContext;
 import org.apache.iotdb.db.queryengine.plan.statement.crud.InsertBaseStatement;
 import org.apache.iotdb.db.queryengine.plan.statement.crud.InsertMultiTabletsStatement;
 import org.apache.iotdb.db.queryengine.plan.statement.crud.InsertRowStatement;
+import org.apache.iotdb.db.queryengine.plan.statement.crud.InsertRowsOfOneDeviceStatement;
 import org.apache.iotdb.db.queryengine.plan.statement.crud.InsertRowsStatement;
 import org.apache.iotdb.db.queryengine.plan.statement.crud.InsertTabletStatement;
 import org.apache.iotdb.rpc.RpcUtils;
@@ -225,6 +228,27 @@ public class AnalyzeUtils {
     boolean hasFailedMeasurement = insertStatement.hasFailedMeasurements();
     String partialInsertMessage;
     if (hasFailedMeasurement) {
+      System.out.println(
+          "insertStatement instanceof InsertRowStatement"
+              + (insertStatement instanceof InsertRowStatement));
+      System.out.println(
+          "insertStatement instanceof InsertRowsStatement"
+              + (insertStatement instanceof InsertRowsStatement));
+      System.out.println(
+          "insertStatement instanceof InsertTabletStatement"
+              + (insertStatement instanceof InsertTabletStatement));
+      System.out.println(
+          "insertStatement instanceof InsertMultiTabletsStatement"
+              + (insertStatement instanceof InsertMultiTabletsStatement));
+      System.out.println(
+          "insertStatement instanceof InsertRowsOfOneDeviceStatement"
+              + (insertStatement instanceof InsertRowsOfOneDeviceStatement));
+      System.out.println(
+          "insertStatement instanceof PipeConvertedInsertRowStatement"
+              + (insertStatement instanceof PipeConvertedInsertRowStatement));
+      System.out.println(
+          "insertStatement instanceof PipeConvertedInsertTabletStatement"
+              + (insertStatement instanceof PipeConvertedInsertTabletStatement));
       System.out.println(insertStatement);
       partialInsertMessage =
           String.format(

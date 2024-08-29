@@ -134,6 +134,13 @@ public class PipeStatementDataTypeConvertExecutionVisitor
   @Override
   public Optional<TSStatus> visitInsertRow(
       final InsertRowStatement insertRowStatement, final TSStatus status) {
+    System.out.println("visitInsertRow");
+    System.out.println("visitInsertRow");
+    System.out.println("visitInsertRow");
+    System.out.println("visitInsertRow");
+    System.out.println("visitInsertRow");
+    System.out.println("visitInsertRow");
+    System.out.println("visitInsertRow");
     return status.getCode() == TSStatusCode.METADATA_ERROR.getStatusCode()
             && status.getMessage() != null
             && status.getMessage().contains(DataTypeMismatchException.REGISTERED_TYPE_STRING)
@@ -144,6 +151,13 @@ public class PipeStatementDataTypeConvertExecutionVisitor
   @Override
   public Optional<TSStatus> visitInsertRows(
       final InsertRowsStatement insertRowsStatement, final TSStatus status) {
+    System.out.println("visitInsertRows");
+    System.out.println("visitInsertRows");
+    System.out.println("visitInsertRows");
+    System.out.println("visitInsertRows");
+    System.out.println("visitInsertRows");
+    System.out.println("visitInsertRows");
+    System.out.println("visitInsertRows");
     if (!((status.getCode() == TSStatusCode.METADATA_ERROR.getStatusCode()
             || status.getCode() == TSStatusCode.MULTIPLE_ERROR.getStatusCode())
         && status.toString().contains(DataTypeMismatchException.REGISTERED_TYPE_STRING))) {
@@ -166,6 +180,13 @@ public class PipeStatementDataTypeConvertExecutionVisitor
   @Override
   public Optional<TSStatus> visitInsertRowsOfOneDevice(
       final InsertRowsOfOneDeviceStatement insertRowsOfOneDeviceStatement, final TSStatus status) {
+    System.out.println("visitInsertRowsOfOneDevice");
+    System.out.println("visitInsertRowsOfOneDevice");
+    System.out.println("visitInsertRowsOfOneDevice");
+    System.out.println("visitInsertRowsOfOneDevice");
+    System.out.println("visitInsertRowsOfOneDevice");
+    System.out.println("visitInsertRowsOfOneDevice");
+    System.out.println("visitInsertRowsOfOneDevice");
     if (!((status.getCode() == TSStatusCode.METADATA_ERROR.getStatusCode()
             || status.getCode() == TSStatusCode.MULTIPLE_ERROR.getStatusCode())
         && status.toString().contains(DataTypeMismatchException.REGISTERED_TYPE_STRING))) {
@@ -190,6 +211,13 @@ public class PipeStatementDataTypeConvertExecutionVisitor
   @Override
   public Optional<TSStatus> visitInsertTablet(
       final InsertTabletStatement insertTabletStatement, final TSStatus status) {
+    System.out.println("visitInsertTablet");
+    System.out.println("visitInsertTablet");
+    System.out.println("visitInsertTablet");
+    System.out.println("visitInsertTablet");
+    System.out.println("visitInsertTablet");
+    System.out.println("visitInsertTablet");
+    System.out.println("visitInsertTablet");
     return status.getCode() == TSStatusCode.METADATA_ERROR.getStatusCode()
             && status.getMessage() != null
             && status.getMessage().contains(DataTypeMismatchException.REGISTERED_TYPE_STRING)
@@ -200,6 +228,13 @@ public class PipeStatementDataTypeConvertExecutionVisitor
   @Override
   public Optional<TSStatus> visitInsertMultiTablets(
       final InsertMultiTabletsStatement insertMultiTabletsStatement, final TSStatus status) {
+    System.out.println("visitInsertMultiTablets");
+    System.out.println("visitInsertMultiTablets");
+    System.out.println("visitInsertMultiTablets");
+    System.out.println("visitInsertMultiTablets");
+    System.out.println("visitInsertMultiTablets");
+    System.out.println("visitInsertMultiTablets");
+    System.out.println("visitInsertMultiTablets");
     if (!((status.getCode() == TSStatusCode.METADATA_ERROR.getStatusCode()
             || status.getCode() == TSStatusCode.MULTIPLE_ERROR.getStatusCode())
         && status.toString().contains(DataTypeMismatchException.REGISTERED_TYPE_STRING))) {
