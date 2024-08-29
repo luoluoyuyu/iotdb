@@ -225,6 +225,7 @@ public class AnalyzeUtils {
     boolean hasFailedMeasurement = insertStatement.hasFailedMeasurements();
     String partialInsertMessage;
     if (hasFailedMeasurement) {
+      System.out.println(insertStatement);
       partialInsertMessage =
           String.format(
               "Fail to insert measurements %s caused by %s",

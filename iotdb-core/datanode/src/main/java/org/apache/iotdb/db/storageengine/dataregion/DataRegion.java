@@ -882,6 +882,7 @@ public class DataRegion implements IDataRegionForQuery {
    */
   public void insert(InsertRowNode insertRowNode) throws WriteProcessException {
     // reject insertions that are out of ttl
+    System.out.println("insertion :" + insertRowNode.toString());
     long deviceTTL =
         DataNodeTTLCache.getInstance().getTTL(insertRowNode.getDevicePath().getNodes());
     if (!CommonUtils.isAlive(insertRowNode.getTime(), deviceTTL)) {

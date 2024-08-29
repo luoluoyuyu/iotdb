@@ -364,6 +364,47 @@ public abstract class InsertBaseStatement extends Statement {
             .collect(Collectors.toList());
   }
 
+  @Override
+  public String toString() {
+    return "InsertBaseStatement{"
+        + "devicePath="
+        + devicePath
+        + ", isAligned="
+        + isAligned
+        + ", measurementSchemas="
+        + Arrays.toString(measurementSchemas)
+        + ", measurements="
+        + Arrays.toString(measurements)
+        + ", dataTypes="
+        + Arrays.toString(dataTypes)
+        + ", failedMeasurementIndex2Info="
+        + failedMeasurementIndex2Info
+        + ", columnCategories="
+        + Arrays.toString(columnCategories)
+        + ", idColumnIndices="
+        + idColumnIndices
+        + ", attrColumnIndices="
+        + attrColumnIndices
+        + ", writeToTable="
+        + writeToTable
+        + ", logicalViewSchemaList="
+        + logicalViewSchemaList
+        + ", indexOfSourcePathsOfLogicalViews="
+        + indexOfSourcePathsOfLogicalViews
+        + ", recordedBeginOfLogicalViewSchemaList="
+        + recordedBeginOfLogicalViewSchemaList
+        + ", recordedEndOfLogicalViewSchemaList="
+        + recordedEndOfLogicalViewSchemaList
+        + ", databaseName='"
+        + databaseName
+        + '\''
+        + ", statementType="
+        + statementType
+        + ", isDebug="
+        + isDebug
+        + '}';
+  }
+
   protected static class FailedMeasurementInfo {
     protected String measurement;
     protected TSDataType dataType;

@@ -183,6 +183,7 @@ public class PipeStatementDataTypeConvertExecutionVisitor
         insertRowsOfOneDeviceStatement.getInsertRowStatementList().stream()
             .map(PipeConvertedInsertRowStatement::new)
             .collect(Collectors.toList()));
+    System.out.println(convertedInsertRowsOfOneDeviceStatement.toString());
     return tryExecute(convertedInsertRowsOfOneDeviceStatement);
   }
 

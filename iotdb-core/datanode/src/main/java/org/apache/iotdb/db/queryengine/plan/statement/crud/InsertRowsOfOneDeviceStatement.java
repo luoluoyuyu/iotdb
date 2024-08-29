@@ -34,6 +34,7 @@ import org.apache.tsfile.enums.TSDataType;
 import org.apache.tsfile.exception.NotImplementedException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -194,5 +195,45 @@ public class InsertRowsOfOneDeviceStatement extends InsertBaseStatement {
       database = childDatabaseName;
     }
     return database;
+  }
+
+  @Override
+  public String toString() {
+    return "InsertRowsOfOneDeviceStatement{"
+        + "insertRowStatementList="
+        + insertRowStatementList
+        + ", devicePath="
+        + devicePath
+        + ", isAligned="
+        + isAligned
+        + ", measurementSchemas="
+        + Arrays.toString(measurementSchemas)
+        + ", measurements="
+        + Arrays.toString(measurements)
+        + ", dataTypes="
+        + Arrays.toString(dataTypes)
+        + ", failedMeasurementIndex2Info="
+        + failedMeasurementIndex2Info
+        + ", columnCategories="
+        + Arrays.toString(columnCategories)
+        + ", idColumnIndices="
+        + idColumnIndices
+        + ", attrColumnIndices="
+        + attrColumnIndices
+        + ", writeToTable="
+        + writeToTable
+        + ", logicalViewSchemaList="
+        + logicalViewSchemaList
+        + ", indexOfSourcePathsOfLogicalViews="
+        + indexOfSourcePathsOfLogicalViews
+        + ", recordedBeginOfLogicalViewSchemaList="
+        + recordedBeginOfLogicalViewSchemaList
+        + ", recordedEndOfLogicalViewSchemaList="
+        + recordedEndOfLogicalViewSchemaList
+        + ", statementType="
+        + statementType
+        + ", isDebug="
+        + isDebug
+        + '}';
   }
 }
