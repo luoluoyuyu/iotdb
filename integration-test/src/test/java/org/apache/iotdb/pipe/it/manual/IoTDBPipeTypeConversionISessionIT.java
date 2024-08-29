@@ -163,6 +163,7 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeDualManualIT 
       senderSession.close();
       receiverSession.close();
       tablet.reset();
+      fail();
     } catch (Exception e) {
       e.printStackTrace();
       fail(e.getMessage());
