@@ -172,6 +172,7 @@ public class PipeStatementDataTypeConvertExecutionVisitor
     if (!((status.getCode() == TSStatusCode.METADATA_ERROR.getStatusCode()
             || status.getCode() == TSStatusCode.MULTIPLE_ERROR.getStatusCode())
         && status.toString().contains(DataTypeMismatchException.REGISTERED_TYPE_STRING))) {
+      System.out.println("code:::::::::::::::::::::::::::::::::" + status.getCode());
       return Optional.empty();
     }
 
