@@ -158,6 +158,17 @@ public class PipeStatementDataTypeConvertExecutionVisitor
     System.out.println("visitInsertRows");
     System.out.println("visitInsertRows");
     System.out.println("visitInsertRows");
+    System.out.println();
+    for (int i = 0;
+        insertRowsStatement.getInsertRowStatementList() != null
+            && i < insertRowsStatement.getInsertRowStatementList().size();
+        i++) {
+      System.out.print(insertRowsStatement.getInsertRowStatementList().get(i) + " ");
+    }
+    System.out.println();
+    System.out.println(
+        "1failedMeasurementsSize " + insertRowsStatement.getFailedMeasurements().size());
+
     if (!((status.getCode() == TSStatusCode.METADATA_ERROR.getStatusCode()
             || status.getCode() == TSStatusCode.MULTIPLE_ERROR.getStatusCode())
         && status.toString().contains(DataTypeMismatchException.REGISTERED_TYPE_STRING))) {
@@ -174,6 +185,8 @@ public class PipeStatementDataTypeConvertExecutionVisitor
         insertRowsStatement.getInsertRowStatementList().stream()
             .map(PipeConvertedInsertRowStatement::new)
             .collect(Collectors.toList()));
+    System.out.println(
+        "2failedMeasurementsSize " + insertRowsStatement.getFailedMeasurements().size());
     return tryExecute(convertedInsertRowsStatement);
   }
 
