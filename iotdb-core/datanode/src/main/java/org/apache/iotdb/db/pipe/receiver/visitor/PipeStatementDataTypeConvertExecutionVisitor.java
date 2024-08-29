@@ -178,6 +178,12 @@ public class PipeStatementDataTypeConvertExecutionVisitor
 
     if (insertRowsStatement.getInsertRowStatementList() == null
         || insertRowsStatement.getInsertRowStatementList().isEmpty()) {
+      System.out.println(
+          "InsertRowStatementList:" + insertRowsStatement.getInsertRowStatementList().isEmpty());
+      if (insertRowsStatement.getInsertRowStatementList() != null) {
+        System.out.println(
+            "InsertRowStatementList:" + insertRowsStatement.getInsertRowStatementList().size());
+      }
       return Optional.empty();
     }
 
