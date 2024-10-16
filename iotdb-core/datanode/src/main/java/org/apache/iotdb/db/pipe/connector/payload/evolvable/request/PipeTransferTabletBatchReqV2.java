@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class PipeTransferTabletBatchReqV2 extends TPipeTransferReq {
+
   private final transient List<PipeTransferTabletBinaryReqV2> binaryReqs = new ArrayList<>();
   private final transient List<PipeTransferTabletInsertNodeReqV2> insertNodeReqs =
       new ArrayList<>();
@@ -134,6 +135,7 @@ public class PipeTransferTabletBatchReqV2 extends TPipeTransferReq {
   }
 
   /////////////////////////////// Thrift ///////////////////////////////
+
   public static PipeTransferTabletBatchReqV2 toTPipeTransferReq(
       final List<ByteBuffer> binaryBuffers,
       final List<ByteBuffer> insertNodeBuffers,
@@ -243,12 +245,12 @@ public class PipeTransferTabletBatchReqV2 extends TPipeTransferReq {
       return false;
     }
     final PipeTransferTabletBatchReqV2 that = (PipeTransferTabletBatchReqV2) obj;
-    return binaryReqs.equals(that.binaryReqs)
-        && insertNodeReqs.equals(that.insertNodeReqs)
-        && tabletReqs.equals(that.tabletReqs)
+    return Objects.equals(binaryReqs, that.binaryReqs)
+        && Objects.equals(insertNodeReqs, that.insertNodeReqs)
+        && Objects.equals(tabletReqs, that.tabletReqs)
         && version == that.version
         && type == that.type
-        && body.equals(that.body);
+        && Objects.equals(body, that.body);
   }
 
   @Override

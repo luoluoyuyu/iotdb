@@ -478,10 +478,10 @@ public class IoTDBDataNodeReceiver extends IoTDBFileReceiver {
         // TsFile's absolute path will be the second element
         ? (isUsingAsyncLoadTsFileStrategy.get()
             ? loadTsFileAsync(
-                ((PipeTransferTsFileSealWithModReq) req).getDatabaseNameWithTsFileName(),
+                ((PipeTransferTsFileSealWithModReq) req).getDatabaseNameByTsFileName(),
                 fileAbsolutePaths)
             : loadTsFileSync(
-                ((PipeTransferTsFileSealWithModReq) req).getDatabaseNameWithTsFileName(),
+                ((PipeTransferTsFileSealWithModReq) req).getDatabaseNameByTsFileName(),
                 fileAbsolutePaths.get(req.getFileNames().size() - 1)))
         : loadSchemaSnapShot(req.getParameters(), fileAbsolutePaths);
   }
@@ -689,6 +689,7 @@ public class IoTDBDataNodeReceiver extends IoTDBFileReceiver {
         && ((InsertBaseStatement) statement).isWriteToTable()) {
       return executeStatementForTableModel(statement);
     }
+
     return executeStatementForTreeModel(statement);
   }
 
