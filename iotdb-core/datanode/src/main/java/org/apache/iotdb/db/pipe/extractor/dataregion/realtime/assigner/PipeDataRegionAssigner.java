@@ -140,6 +140,7 @@ public class PipeDataRegionAssigner implements Closeable {
                       extractor.getRealtimeDataExtractionEndTime());
               final EnrichedEvent innerEvent = copiedEvent.getEvent();
 
+              LOGGER.info("Real-time data is being processed through Extractor: {}", copiedEvent);
               if (innerEvent instanceof PipeTsFileInsertionEvent) {
                 final PipeTsFileInsertionEvent tsFileInsertionEvent =
                     (PipeTsFileInsertionEvent) innerEvent;
