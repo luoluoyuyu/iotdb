@@ -24,13 +24,21 @@ import org.apache.iotdb.commons.pipe.event.ProgressReportEvent;
 import org.apache.iotdb.db.pipe.agent.PipeDataNodeAgent;
 import org.apache.iotdb.db.pipe.event.common.deletion.PipeDeleteDataNodeEvent;
 import org.apache.iotdb.db.pipe.event.common.heartbeat.PipeHeartbeatEvent;
+import org.apache.iotdb.db.pipe.event.common.tsfile.PipeTsFileInsertionEvent;
 import org.apache.iotdb.db.pipe.event.realtime.PipeRealtimeEvent;
 import org.apache.iotdb.db.pipe.extractor.dataregion.realtime.epoch.TsFileEpoch;
 import org.apache.iotdb.pipe.api.event.Event;
 import org.apache.iotdb.pipe.api.event.dml.insertion.TsFileInsertionEvent;
 
+import org.apache.tsfile.file.metadata.IDeviceID;
+import org.apache.tsfile.file.metadata.TimeseriesMetadata;
+import org.apache.tsfile.read.TsFileSequenceReader;
+import org.apache.tsfile.read.TsFileSequenceReaderTimeseriesMetadataIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Map;
 
 public class PipeRealtimeDataRegionTsFileExtractor extends PipeRealtimeDataRegionExtractor {
 
@@ -89,7 +97,26 @@ public class PipeRealtimeDataRegionTsFileExtractor extends PipeRealtimeDataRegio
 
     while (realtimeEvent != null) {
       Event suppliedEvent = null;
+      if (realtimeEvent.getEvent() instanceof PipeTsFileInsertionEvent) {
+        try (final TsFileSequenceReader reader =
+            new TsFileSequenceReader(
+                (((PipeTsFileInsertionEvent) realtimeEvent.getEvent()).getTsFile())
+                    .getAbsolutePath())) {
+          // can be reused when constructing tsfile resource
+          final TsFileSequenceReaderTimeseriesMetadataIterator timeseriesMetadataIterator =
+              new TsFileSequenceReaderTimeseriesMetadataIterator(reader, true, 1);
+          while (timeseriesMetadataIterator.hasNext()) {
+            final Map<IDeviceID, List<TimeseriesMetadata>> device2TimeseriesMetadata =
+                timeseriesMetadataIterator.next();
 
+            for (IDeviceID deviceId : device2TimeseriesMetadata.keySet()) {
+              LOGGER.warn("history load tsfile println device {}", deviceId);
+            }
+          }
+        } catch (Exception e) {
+          LOGGER.error(e.getMessage());
+        }
+      }
       if (realtimeEvent.getEvent() instanceof PipeHeartbeatEvent) {
         suppliedEvent = supplyHeartbeat(realtimeEvent);
       } else if (realtimeEvent.getEvent() instanceof PipeDeleteDataNodeEvent

@@ -55,6 +55,9 @@ import org.apache.iotdb.pipe.api.exception.PipeParameterNotValidException;
 
 import org.apache.tsfile.file.metadata.IDeviceID;
 import org.apache.tsfile.file.metadata.PlainDeviceID;
+import org.apache.tsfile.file.metadata.TimeseriesMetadata;
+import org.apache.tsfile.read.TsFileSequenceReader;
+import org.apache.tsfile.read.TsFileSequenceReaderTimeseriesMetadataIterator;
 import org.apache.tsfile.utils.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -769,6 +772,22 @@ public class PipeHistoricalDataRegionTsFileAndDeletionExtractor
     if (resource == null) {
       return supplyTerminateEvent();
     } else if (resource instanceof TsFileResource) {
+      try (final TsFileSequenceReader reader =
+          new TsFileSequenceReader(((TsFileResource) resource).getTsFile().getAbsolutePath())) {
+        // can be reused when constructing tsfile resource
+        final TsFileSequenceReaderTimeseriesMetadataIterator timeseriesMetadataIterator =
+            new TsFileSequenceReaderTimeseriesMetadataIterator(reader, true, 1);
+        while (timeseriesMetadataIterator.hasNext()) {
+          final Map<IDeviceID, List<TimeseriesMetadata>> device2TimeseriesMetadata =
+              timeseriesMetadataIterator.next();
+
+          for (IDeviceID deviceId : device2TimeseriesMetadata.keySet()) {
+            LOGGER.warn("history load tsfile println device {}", deviceId);
+          }
+        }
+      } catch (Exception e) {
+        LOGGER.warn("println {}", e);
+      }
       return supplyTsFileEvent((TsFileResource) resource);
     } else {
       return supplyDeletionEvent((DeletionResource) resource);
