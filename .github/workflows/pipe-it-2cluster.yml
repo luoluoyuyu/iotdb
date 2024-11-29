@@ -297,3 +297,10 @@ jobs:
           name: cluster-log-table-model-java${{ matrix.java }}-${{ runner.os }}-${{ matrix.cluster }}-${{ matrix.cluster }}
           path: integration-test/target/cluster-logs
           retention-days: 30
+      - name: Upload data
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cluster-log-table-model-java${{ matrix.java }}-${{ runner.os }}-${{ matrix.cluster }}-${{ matrix.cluster }}
+          path: data
+          retention-days: 30
