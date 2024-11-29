@@ -292,6 +292,12 @@ public class TableModelUtils {
 
   public static void assertData(
       String database, String table, int start, int end, BaseEnv baseEnv) {
+    try {
+      Thread.sleep(10000);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+    TestUtils.executeNonQueryWithRetry(baseEnv, "flush");
     TestUtils.assertDataEventuallyOnEnv(
         baseEnv,
         TableModelUtils.getQuerySql(table),
@@ -301,6 +307,12 @@ public class TableModelUtils {
   }
 
   public static void assertData(String database, String table, Tablet tablet, BaseEnv baseEnv) {
+    try {
+      Thread.sleep(10000);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+    TestUtils.executeNonQueryWithRetry(baseEnv, "flush");
     TestUtils.assertDataEventuallyOnEnv(
         baseEnv,
         TableModelUtils.getQuerySql(table),
@@ -315,6 +327,12 @@ public class TableModelUtils {
   }
 
   public static void assertCountData(String database, String table, int count, BaseEnv baseEnv) {
+    try {
+      Thread.sleep(10000);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+    TestUtils.executeNonQueryWithRetry(baseEnv, "flush");
     TestUtils.assertDataEventuallyOnEnv(
         baseEnv, getQueryCountSql(table), "_col0,", Collections.singleton(count + ","), database);
   }
