@@ -63,7 +63,7 @@ abstract class AbstractPipeTableModelTestIT {
 
   @After
   public final void tearDown() {
-    //    senderEnv.cleanClusterEnvironment();
-    //    receiverEnv.cleanClusterEnvironment();
+    senderEnv.cleanClusterEnvironment();
+    receiverEnv.cleanClusterEnvironment();
   }
 }
