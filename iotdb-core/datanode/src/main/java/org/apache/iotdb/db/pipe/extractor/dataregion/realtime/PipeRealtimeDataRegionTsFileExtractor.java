@@ -110,7 +110,7 @@ public class PipeRealtimeDataRegionTsFileExtractor extends PipeRealtimeDataRegio
                 timeseriesMetadataIterator.next();
 
             for (IDeviceID deviceId : device2TimeseriesMetadata.keySet()) {
-              LOGGER.warn("history load tsfile println device {}", deviceId);
+              LOGGER.warn("realtime load tsfile println device {}", deviceId);
             }
           }
         } catch (Exception e) {

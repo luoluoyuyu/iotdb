@@ -565,16 +565,35 @@ public class PipeHistoricalDataRegionTsFileAndDeletionExtractor
           tsFileManager.getTsFileList(true).stream()
               .filter(
                   resource ->
-                      // Some resource is marked as deleted but not removed from the list.
-                      !resource.isDeleted()
-                          && (
-                          // Some resource may not be closed due to the control of
-                          // PIPE_MIN_FLUSH_INTERVAL_IN_MS. We simply ignore them.
-                          !resource.isClosed()
-                              || mayTsFileContainUnprocessedData(resource)
-                                  && isTsFileResourceOverlappedWithTimeRange(resource)
-                                  && isTsFileGeneratedAfterExtractionTimeLowerBound(resource)
-                                  && mayTsFileResourceOverlappedWithPattern(resource)))
+                  // Some resource is marked as deleted but not removed from the list.
+                  {
+                    try (final TsFileSequenceReader reader =
+                        new TsFileSequenceReader((resource).getTsFile().getAbsolutePath())) {
+                      // can be reused when constructing tsfile resource
+                      final TsFileSequenceReaderTimeseriesMetadataIterator
+                          timeseriesMetadataIterator =
+                              new TsFileSequenceReaderTimeseriesMetadataIterator(reader, true, 1);
+                      while (timeseriesMetadataIterator.hasNext()) {
+                        final Map<IDeviceID, List<TimeseriesMetadata>> device2TimeseriesMetadata =
+                            timeseriesMetadataIterator.next();
+
+                        for (IDeviceID deviceId : device2TimeseriesMetadata.keySet()) {
+                          LOGGER.warn("all tsfile history println device {}", deviceId);
+                        }
+                      }
+                    } catch (Exception e) {
+                      LOGGER.warn("", e);
+                    }
+                    return !resource.isDeleted()
+                        && (
+                        // Some resource may not be closed due to the control of
+                        // PIPE_MIN_FLUSH_INTERVAL_IN_MS. We simply ignore them.
+                        !resource.isClosed()
+                            || mayTsFileContainUnprocessedData(resource)
+                                && isTsFileResourceOverlappedWithTimeRange(resource)
+                                && isTsFileGeneratedAfterExtractionTimeLowerBound(resource)
+                                && mayTsFileResourceOverlappedWithPattern(resource));
+                  })
               .collect(Collectors.toList());
       resourceList.addAll(sequenceTsFileResources);
 
@@ -582,16 +601,35 @@ public class PipeHistoricalDataRegionTsFileAndDeletionExtractor
           tsFileManager.getTsFileList(false).stream()
               .filter(
                   resource ->
-                      // Some resource is marked as deleted but not removed from the list.
-                      !resource.isDeleted()
-                          && (
-                          // Some resource may not be closed due to the control of
-                          // PIPE_MIN_FLUSH_INTERVAL_IN_MS. We simply ignore them.
-                          !resource.isClosed()
-                              || mayTsFileContainUnprocessedData(resource)
-                                  && isTsFileResourceOverlappedWithTimeRange(resource)
-                                  && isTsFileGeneratedAfterExtractionTimeLowerBound(resource)
-                                  && mayTsFileResourceOverlappedWithPattern(resource)))
+                  // Some resource is marked as deleted but not removed from the list.
+                  {
+                    try (final TsFileSequenceReader reader =
+                        new TsFileSequenceReader((resource).getTsFile().getAbsolutePath())) {
+                      // can be reused when constructing tsfile resource
+                      final TsFileSequenceReaderTimeseriesMetadataIterator
+                          timeseriesMetadataIterator =
+                              new TsFileSequenceReaderTimeseriesMetadataIterator(reader, true, 1);
+                      while (timeseriesMetadataIterator.hasNext()) {
+                        final Map<IDeviceID, List<TimeseriesMetadata>> device2TimeseriesMetadata =
+                            timeseriesMetadataIterator.next();
+
+                        for (IDeviceID deviceId : device2TimeseriesMetadata.keySet()) {
+                          LOGGER.warn("all tsfile history println device {}", deviceId);
+                        }
+                      }
+                    } catch (Exception e) {
+                      LOGGER.warn("", e);
+                    }
+                    return !resource.isDeleted()
+                        && (
+                        // Some resource may not be closed due to the control of
+                        // PIPE_MIN_FLUSH_INTERVAL_IN_MS. We simply ignore them.
+                        !resource.isClosed()
+                            || mayTsFileContainUnprocessedData(resource)
+                                && isTsFileResourceOverlappedWithTimeRange(resource)
+                                && isTsFileGeneratedAfterExtractionTimeLowerBound(resource)
+                                && mayTsFileResourceOverlappedWithPattern(resource));
+                  })
               .collect(Collectors.toList());
       resourceList.addAll(unsequenceTsFileResources);
 
@@ -786,7 +824,7 @@ public class PipeHistoricalDataRegionTsFileAndDeletionExtractor
           }
         }
       } catch (Exception e) {
-        LOGGER.warn("println {}", e);
+        LOGGER.warn("", e);
       }
       return supplyTsFileEvent((TsFileResource) resource);
     } else {
