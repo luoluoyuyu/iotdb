@@ -395,7 +395,7 @@ public abstract class AbstractOperatePipeProcedureV2
       throws IOException {
     final List<ByteBuffer> pipeMetaBinaryList = new ArrayList<>();
     for (PipeMeta pipeMeta : pipeTaskInfo.get().getPipeMetaList()) {
-      pipeMetaBinaryList.add(copyAndFilterOutNonWorkingDataRegionPipeTasks(pipeMeta).serialize());
+      pipeMetaBinaryList.add(pipeMeta.serialize());
     }
     return env.pushAllPipeMetaToDataNodes(pipeMetaBinaryList);
   }
@@ -412,7 +412,7 @@ public abstract class AbstractOperatePipeProcedureV2
       ConfigNodeProcedureEnv env, AtomicReference<PipeTaskInfo> pipeTaskInfo) throws IOException {
     final List<ByteBuffer> pipeMetaBinaryList = new ArrayList<>();
     for (final PipeMeta pipeMeta : pipeTaskInfo.get().getPipeMetaList()) {
-      pipeMetaBinaryList.add(copyAndFilterOutNonWorkingDataRegionPipeTasks(pipeMeta).serialize());
+      pipeMetaBinaryList.add(pipeMeta.serialize());
     }
     return env.pushAllPipeMetaToDataNodes(pipeMetaBinaryList);
   }
@@ -490,9 +490,7 @@ public abstract class AbstractOperatePipeProcedureV2
   protected Map<Integer, TPushPipeMetaResp> pushSinglePipeMetaToDataNodes(
       String pipeName, ConfigNodeProcedureEnv env) throws IOException {
     return env.pushSinglePipeMetaToDataNodes(
-        copyAndFilterOutNonWorkingDataRegionPipeTasks(
-                pipeTaskInfo.get().getPipeMetaByPipeName(pipeName))
-            .serialize());
+        pipeTaskInfo.get().getPipeMetaByPipeName(pipeName).serialize());
   }
 
   /**
