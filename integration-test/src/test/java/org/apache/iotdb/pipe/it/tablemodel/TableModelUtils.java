@@ -49,6 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.fail;
 
@@ -304,6 +305,22 @@ public class TableModelUtils {
         TableModelUtils.generateHeaderResults(),
         TableModelUtils.generateExpectedResults(start, end),
         database);
+  }
+
+  public static void assertData(
+      String database,
+      String table,
+      int start,
+      int end,
+      BaseEnv baseEnv,
+      Consumer<String> handleFailure) {
+    TestUtils.assertDataEventuallyOnEnv(
+        baseEnv,
+        TableModelUtils.getQuerySql(table),
+        TableModelUtils.generateHeaderResults(),
+        TableModelUtils.generateExpectedResults(start, end),
+        database,
+        handleFailure);
   }
 
   public static void assertData(String database, String table, Tablet tablet, BaseEnv baseEnv) {
