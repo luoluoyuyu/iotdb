@@ -539,35 +539,6 @@ public class TestUtils {
     }
   }
 
-  public static void assertResultSetEqual(
-      ResultSet actualResultSet,
-      String expectedHeader,
-      Set<String> expectedRetSet,
-      Consumer consumer) {
-    try {
-      ResultSetMetaData resultSetMetaData = actualResultSet.getMetaData();
-      StringBuilder header = new StringBuilder();
-      for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
-        header.append(resultSetMetaData.getColumnName(i)).append(",");
-      }
-      assertEquals(expectedHeader, header.toString());
-
-      Set<String> actualRetSet = new HashSet<>();
-
-      while (actualResultSet.next()) {
-        StringBuilder builder = new StringBuilder();
-        for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
-          builder.append(actualResultSet.getString(i)).append(",");
-        }
-        actualRetSet.add(builder.toString());
-      }
-      assertEquals(expectedRetSet, actualRetSet);
-    } catch (Exception e) {
-      e.printStackTrace();
-      Assert.fail(String.valueOf(e));
-    }
-  }
-
   public static void assertSingleResultSetEqual(
       ResultSet actualResultSet, Map<String, String> expectedHeaderWithResult) {
     try {
