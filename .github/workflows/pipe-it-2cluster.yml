@@ -290,7 +290,6 @@ jobs:
           -pl integration-test \
           -am -PMultiClusterIT2TableModel \
           -ntp
-          -debug
       - name: Upload Artifact
         if: failure()
         uses: actions/upload-artifact@v4
