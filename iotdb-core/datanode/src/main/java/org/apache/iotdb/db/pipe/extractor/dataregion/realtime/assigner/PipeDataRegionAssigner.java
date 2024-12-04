@@ -215,7 +215,10 @@ public class PipeDataRegionAssigner implements Closeable {
                         timeseriesMetadataIterator.next();
 
                     for (IDeviceID deviceId : device2TimeseriesMetadata.keySet()) {
-                      LOGGER.warn(" assigner realtime load tsfile println device {}", deviceId);
+                      LOGGER.warn(
+                          "{} assigner realtime load tsfile println device {}",
+                          extractor.getPipeName(),
+                          deviceId);
                     }
                   }
                 } catch (Exception e) {
