@@ -35,12 +35,19 @@ import org.apache.iotdb.db.pipe.extractor.dataregion.realtime.PipeRealtimeDataRe
 import org.apache.iotdb.db.pipe.extractor.dataregion.realtime.matcher.CachedSchemaPatternMatcher;
 import org.apache.iotdb.db.pipe.extractor.dataregion.realtime.matcher.PipeDataRegionMatcher;
 import org.apache.iotdb.db.pipe.metric.PipeAssignerMetrics;
+import org.apache.iotdb.pipe.api.event.dml.insertion.TabletInsertionEvent;
 import org.apache.iotdb.pipe.api.event.dml.insertion.TsFileInsertionEvent;
 
+import org.apache.tsfile.file.metadata.IDeviceID;
+import org.apache.tsfile.file.metadata.TimeseriesMetadata;
+import org.apache.tsfile.read.TsFileSequenceReader;
+import org.apache.tsfile.read.TsFileSequenceReaderTimeseriesMetadataIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -94,6 +101,33 @@ public class PipeDataRegionAssigner implements Closeable {
 
   public void assignToExtractor(
       final PipeRealtimeEvent event, final long sequence, final boolean endOfBatch) {
+    if (event.getEvent() instanceof PipeTsFileInsertionEvent) {
+      try (final TsFileSequenceReader reader =
+          new TsFileSequenceReader(
+              (((PipeTsFileInsertionEvent) event.getEvent()).getTsFile()).getAbsolutePath())) {
+        final TsFileSequenceReaderTimeseriesMetadataIterator timeseriesMetadataIterator =
+            new TsFileSequenceReaderTimeseriesMetadataIterator(reader, true, 1);
+        while (timeseriesMetadataIterator.hasNext()) {
+          final Map<IDeviceID, List<TimeseriesMetadata>> device2TimeseriesMetadata =
+              timeseriesMetadataIterator.next();
+
+          for (IDeviceID deviceId : device2TimeseriesMetadata.keySet()) {
+            LOGGER.warn(" get realtime load tsfile println device {}", deviceId);
+          }
+        }
+      } catch (Exception e) {
+        LOGGER.error(e.getMessage());
+      }
+    } else if (event.getEvent() instanceof TabletInsertionEvent) {
+      TabletInsertionEvent tabletInsertionEvent = (TabletInsertionEvent) event.getEvent();
+      tabletInsertionEvent.processTablet(
+          (a, rowCollector) -> {
+            for (int i = 0; i < a.getRowSize(); i++) {
+              LOGGER.warn("get realtime insertNode println device {}", a.getDeviceID(i));
+            }
+          });
+    }
+
     matcher
         .match(event)
         .forEach(
@@ -168,6 +202,36 @@ public class PipeDataRegionAssigner implements Closeable {
                     "The reference count of the event {} cannot be increased, skipping it.",
                     copiedEvent);
                 return;
+              }
+              if (event.getEvent() instanceof PipeTsFileInsertionEvent) {
+                try (final TsFileSequenceReader reader =
+                    new TsFileSequenceReader(
+                        (((PipeTsFileInsertionEvent) event.getEvent()).getTsFile())
+                            .getAbsolutePath())) {
+                  final TsFileSequenceReaderTimeseriesMetadataIterator timeseriesMetadataIterator =
+                      new TsFileSequenceReaderTimeseriesMetadataIterator(reader, true, 1);
+                  while (timeseriesMetadataIterator.hasNext()) {
+                    final Map<IDeviceID, List<TimeseriesMetadata>> device2TimeseriesMetadata =
+                        timeseriesMetadataIterator.next();
+
+                    for (IDeviceID deviceId : device2TimeseriesMetadata.keySet()) {
+                      LOGGER.warn(" assigner realtime load tsfile println device {}", deviceId);
+                    }
+                  }
+                } catch (Exception e) {
+                  LOGGER.error(e.getMessage());
+                }
+              } else if (event.getEvent() instanceof TabletInsertionEvent) {
+                TabletInsertionEvent tabletInsertionEvent = (TabletInsertionEvent) event.getEvent();
+                tabletInsertionEvent.processTablet(
+                    (a, rowCollector) -> {
+                      for (int i = 0; i < a.getRowSize(); i++) {
+                        LOGGER.warn(
+                            "{} assigner realtime insertNode println device {}",
+                            extractor.getPipeName(),
+                            a.getDeviceID(i));
+                      }
+                    });
               }
               extractor.extract(copiedEvent);
 
