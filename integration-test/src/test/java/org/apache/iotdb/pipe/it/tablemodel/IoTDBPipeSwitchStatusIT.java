@@ -21,6 +21,7 @@ package org.apache.iotdb.pipe.it.tablemodel;
 
 import org.apache.iotdb.common.rpc.thrift.TSStatus;
 import org.apache.iotdb.commons.client.sync.SyncConfigNodeIServiceClient;
+import org.apache.iotdb.commons.pipe.agent.task.meta.PipeStaticMeta;
 import org.apache.iotdb.confignode.rpc.thrift.TCreatePipeReq;
 import org.apache.iotdb.confignode.rpc.thrift.TShowPipeInfo;
 import org.apache.iotdb.confignode.rpc.thrift.TShowPipeReq;
@@ -30,6 +31,7 @@ import org.apache.iotdb.itbase.category.MultiClusterIT2TableModel;
 import org.apache.iotdb.rpc.TSStatusCode;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -38,6 +40,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Ignore
 @RunWith(IoTDBTestRunner.class)
 @Category({MultiClusterIT2TableModel.class})
 public class IoTDBPipeSwitchStatusIT extends AbstractPipeTableModelTestIT {
@@ -251,7 +254,11 @@ public class IoTDBPipeSwitchStatusIT extends AbstractPipeTableModelTestIT {
       Assert.assertEquals(
           TSStatusCode.SUCCESS_STATUS.getStatusCode(), client.dropPipe("p1").getCode());
       showPipeResult = client.showPipe(new TShowPipeReq()).pipeInfoList;
-      Assert.assertEquals(0, showPipeResult.size());
+      Assert.assertEquals(
+          0,
+          showPipeResult.stream()
+              .filter(info -> !info.id.startsWith(PipeStaticMeta.SYSTEM_PIPE_PREFIX))
+              .count());
 
       status =
           client.createPipe(

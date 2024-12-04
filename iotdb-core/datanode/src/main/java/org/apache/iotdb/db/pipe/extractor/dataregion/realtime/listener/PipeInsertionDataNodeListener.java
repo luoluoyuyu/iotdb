@@ -28,8 +28,15 @@ import org.apache.iotdb.db.pipe.extractor.dataregion.realtime.PipeRealtimeDataRe
 import org.apache.iotdb.db.pipe.extractor.dataregion.realtime.assigner.PipeDataRegionAssigner;
 import org.apache.iotdb.db.queryengine.plan.planner.plan.node.write.AbstractDeleteDataNode;
 import org.apache.iotdb.db.queryengine.plan.planner.plan.node.write.InsertNode;
+import org.apache.iotdb.db.queryengine.plan.planner.plan.node.write.InsertRowNode;
+import org.apache.iotdb.db.queryengine.plan.planner.plan.node.write.RelationalInsertRowNode;
+import org.apache.iotdb.db.queryengine.plan.planner.plan.node.write.RelationalInsertRowsNode;
+import org.apache.iotdb.db.queryengine.plan.planner.plan.node.write.RelationalInsertTabletNode;
 import org.apache.iotdb.db.storageengine.dataregion.tsfile.TsFileResource;
 import org.apache.iotdb.db.storageengine.dataregion.wal.utils.WALEntryHandler;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,6 +57,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class PipeInsertionDataNodeListener {
   private final ConcurrentMap<String, PipeDataRegionAssigner> dataRegionId2Assigner =
       new ConcurrentHashMap<>();
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(PipeInsertionDataNodeListener.class);
 
   private final AtomicInteger listenToTsFileExtractorCount = new AtomicInteger(0);
   private final AtomicInteger listenToInsertNodeExtractorCount = new AtomicInteger(0);
@@ -133,6 +142,24 @@ public class PipeInsertionDataNodeListener {
     // only events from registered data region will be extracted
     if (assigner == null) {
       return;
+    }
+
+    if (insertNode instanceof RelationalInsertTabletNode) {
+      for (int i = 0; i < ((RelationalInsertTabletNode) insertNode).getRowCount(); i++) {
+        LOGGER.warn(
+            "get realtime insertNode println device {}",
+            ((RelationalInsertTabletNode) insertNode).getDeviceID(i));
+      }
+    } else if (insertNode instanceof RelationalInsertRowsNode) {
+      for (InsertRowNode rowNode : ((RelationalInsertRowsNode) insertNode).getInsertRowNodeList()) {
+        LOGGER.warn(
+            "get realtime insertNode println device {}",
+            ((RelationalInsertRowNode) insertNode).getDeviceID());
+      }
+    } else if (insertNode instanceof RelationalInsertRowNode) {
+      LOGGER.warn(
+          "get realtime insertNode println device {}",
+          ((RelationalInsertRowNode) insertNode).getDeviceID());
     }
 
     assigner.publishToAssign(

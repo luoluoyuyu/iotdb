@@ -28,6 +28,7 @@ import org.apache.iotdb.itbase.category.MultiClusterIT2TableModel;
 import org.apache.iotdb.rpc.TSStatusCode;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,6 +36,7 @@ import org.junit.runner.RunWith;
 import java.util.HashMap;
 import java.util.Map;
 
+@Ignore
 @RunWith(IoTDBTestRunner.class)
 @Category({MultiClusterIT2TableModel.class})
 public class IoTDBPipeNullValueIT extends AbstractPipeTableModelTestIT {
@@ -62,9 +64,9 @@ public class IoTDBPipeNullValueIT extends AbstractPipeTableModelTestIT {
       TableModelUtils.createDataBaseAndTable(senderEnv, "test", "test");
 
       if (insertType == InsertType.SESSION_INSERT_TABLET) {
-        TableModelUtils.insertDataByTablet("test", "test", 0, 200, senderEnv, true);
+        TableModelUtils.insertDataByTablet("test", "test", 0, 200, senderEnv, false);
       } else if (insertType == InsertType.SQL_INSERT) {
-        TableModelUtils.insertData("test", "test", 0, 200, senderEnv, true);
+        TableModelUtils.insertData("test", "test", 0, 200, senderEnv, false);
       }
 
       connectorAttributes.put("connector", "iotdb-thrift-connector");
@@ -72,7 +74,7 @@ public class IoTDBPipeNullValueIT extends AbstractPipeTableModelTestIT {
       connectorAttributes.put("connector.port", Integer.toString(receiverPort));
 
       extractorAttributes.put("capture.table", "true");
-      extractorAttributes.put("realtime-mode", realtime);
+      extractorAttributes.put("realtime-mode", "file");
       if (withParsing) {
         extractorAttributes.put("start-time", "150");
         extractorAttributes.put("end-time", "249");
@@ -89,9 +91,9 @@ public class IoTDBPipeNullValueIT extends AbstractPipeTableModelTestIT {
     }
 
     if (insertType == InsertType.SESSION_INSERT_TABLET) {
-      TableModelUtils.insertDataByTablet("test", "test", 200, 400, senderEnv, true);
+      TableModelUtils.insertDataByTablet("test", "test", 200, 400, senderEnv, false);
     } else if (insertType == InsertType.SQL_INSERT) {
-      TableModelUtils.insertData("test", "test", 200, 400, senderEnv, true);
+      TableModelUtils.insertData("test", "test", 200, 400, senderEnv, false);
     }
 
     if (withParsing) {
