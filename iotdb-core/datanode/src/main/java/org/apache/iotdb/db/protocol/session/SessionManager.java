@@ -141,12 +141,12 @@ public class SessionManager implements SessionManagerMBean {
             .setCode(TSStatusCode.SUCCESS_STATUS.getStatusCode())
             .setMessage("Login successfully");
 
-        LOGGER.info(
-            "{}: Login status: {}. User : {}, opens Session-{}",
-            IoTDBConstant.GLOBAL_DB_NAME,
-            openSessionResp.getMessage(),
-            username,
-            session);
+        //        LOGGER.info(
+        //            "{}: Login status: {}. User : {}, opens Session-{}",
+        //            IoTDBConstant.GLOBAL_DB_NAME,
+        //            openSessionResp.getMessage(),
+        //            username,
+        //            session);
         if (ENABLE_AUDIT_LOG) {
           AuditLogger.log(
               String.format(

@@ -42,7 +42,7 @@ public class PipeRealtimeDataRegionLogExtractor extends PipeRealtimeDataRegionEx
   @Override
   protected void doExtract(PipeRealtimeEvent event) {
     final Event eventToExtract = event.getEvent();
-
+    LOGGER.warn(eventToExtract.toString());
     if (eventToExtract instanceof TabletInsertionEvent) {
       extractTabletInsertion(event);
     } else if (eventToExtract instanceof TsFileInsertionEvent) {
