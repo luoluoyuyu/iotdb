@@ -118,14 +118,6 @@ public class PipeDataRegionAssigner implements Closeable {
       } catch (Exception e) {
         LOGGER.error(e.getMessage());
       }
-    } else if (event.getEvent() instanceof TabletInsertionEvent) {
-      TabletInsertionEvent tabletInsertionEvent = (TabletInsertionEvent) event.getEvent();
-      tabletInsertionEvent.processTablet(
-          (a, rowCollector) -> {
-            for (int i = 0; i < a.getRowSize(); i++) {
-              LOGGER.warn("get realtime insertNode println device {}", a.getDeviceID(i));
-            }
-          });
     }
 
     matcher
