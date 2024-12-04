@@ -49,6 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.fail;
 
@@ -148,6 +149,7 @@ public class TableModelUtils {
               "insert into %s (s0, s3, s2, s1, s4, s5, s6, s7, s8, time) values ('t%s','%s', %s.0, %s, %s, %d, %d.0, '%s', '%s', %s)",
               tableName, i, i, i, i, i, i, i, getDateStr(i), i, i));
     }
+    list.add("flush");
     return TestUtils.tryExecuteNonQueriesWithRetry(
         dataBaseName, BaseEnv.TABLE_SQL_DIALECT, baseEnv, list);
   }
@@ -171,6 +173,7 @@ public class TableModelUtils {
         baseEnv, wrapper, list, dataBaseName, BaseEnv.TABLE_SQL_DIALECT)) {
       return false;
     }
+
     return true;
   }
 
@@ -199,7 +202,6 @@ public class TableModelUtils {
     List<String> list = new ArrayList<>(end - start + 1);
     list.add(
         String.format("delete from %s where time >= %s and time <= %s", tableName, start, end));
-    list.add("flush");
     if (!TestUtils.tryExecuteNonQueriesWithRetry(
         dataBaseName, BaseEnv.TABLE_SQL_DIALECT, baseEnv, list)) {
       fail();
@@ -291,6 +293,12 @@ public class TableModelUtils {
 
   public static void assertData(
       String database, String table, int start, int end, BaseEnv baseEnv) {
+    try {
+      Thread.sleep(10000);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+    TestUtils.executeNonQueryWithRetry(baseEnv, "flush");
     TestUtils.assertDataEventuallyOnEnv(
         baseEnv,
         TableModelUtils.getQuerySql(table),
@@ -299,7 +307,29 @@ public class TableModelUtils {
         database);
   }
 
+  public static void assertData(
+      String database,
+      String table,
+      int start,
+      int end,
+      BaseEnv baseEnv,
+      Consumer<String> handleFailure) {
+    TestUtils.assertDataEventuallyOnEnv(
+        baseEnv,
+        TableModelUtils.getQuerySql(table),
+        TableModelUtils.generateHeaderResults(),
+        TableModelUtils.generateExpectedResults(start, end),
+        database,
+        handleFailure);
+  }
+
   public static void assertData(String database, String table, Tablet tablet, BaseEnv baseEnv) {
+    try {
+      Thread.sleep(10000);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+    TestUtils.executeNonQueryWithRetry(baseEnv, "flush");
     TestUtils.assertDataEventuallyOnEnv(
         baseEnv,
         TableModelUtils.getQuerySql(table),
@@ -314,8 +344,26 @@ public class TableModelUtils {
   }
 
   public static void assertCountData(String database, String table, int count, BaseEnv baseEnv) {
+    try {
+      Thread.sleep(10000);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+    TestUtils.executeNonQueryWithRetry(baseEnv, "flush");
     TestUtils.assertDataEventuallyOnEnv(
         baseEnv, getQueryCountSql(table), "_col0,", Collections.singleton(count + ","), database);
+  }
+
+  public static void assertCountData(
+      String database, String table, int count, BaseEnv baseEnv, Consumer<String> handleFailure) {
+    TestUtils.executeNonQueryWithRetry(baseEnv, "flush");
+    TestUtils.assertDataEventuallyOnEnv(
+        baseEnv,
+        getQueryCountSql(table),
+        "_col0,",
+        Collections.singleton(count + ","),
+        database,
+        handleFailure);
   }
 
   public static String getDateStr(int value) {
