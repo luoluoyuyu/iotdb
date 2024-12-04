@@ -54,10 +54,6 @@ import org.apache.iotdb.pipe.api.event.dml.insertion.TsFileInsertionEvent;
 import org.apache.iotdb.service.rpc.thrift.TPipeTransferReq;
 
 import org.apache.tsfile.exception.write.WriteProcessException;
-import org.apache.tsfile.file.metadata.IDeviceID;
-import org.apache.tsfile.file.metadata.TimeseriesMetadata;
-import org.apache.tsfile.read.TsFileSequenceReader;
-import org.apache.tsfile.read.TsFileSequenceReaderTimeseriesMetadataIterator;
 import org.apache.tsfile.utils.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -148,13 +144,13 @@ public class IoTDBDataRegionAsyncConnector extends IoTDBConnector {
 
   @Override
   public void transfer(final TabletInsertionEvent tabletInsertionEvent) throws Exception {
-
-    tabletInsertionEvent.processTablet(
-        (a, rowCollector) -> {
-          for (int i = 0; i < a.getRowSize(); i++) {
-            LOGGER.warn("sink insertNode println device {}", a.getDeviceID(i));
-          }
-        });
+    //
+    //    tabletInsertionEvent.processTablet(
+    //        (a, rowCollector) -> {
+    //          for (int i = 0; i < a.getRowSize(); i++) {
+    //            LOGGER.warn("sink insertNode println device {}", a.getDeviceID(i));
+    //          }
+    //        });
 
     transferQueuedEventsIfNecessary();
 
@@ -313,22 +309,23 @@ public class IoTDBDataRegionAsyncConnector extends IoTDBConnector {
   @Override
   public void transfer(final TsFileInsertionEvent tsFileInsertionEvent) throws Exception {
 
-    try (final TsFileSequenceReader reader =
-        new TsFileSequenceReader(
-            (((PipeTsFileInsertionEvent) tsFileInsertionEvent).getTsFile()).getAbsolutePath())) {
-      final TsFileSequenceReaderTimeseriesMetadataIterator timeseriesMetadataIterator =
-          new TsFileSequenceReaderTimeseriesMetadataIterator(reader, true, 1);
-      while (timeseriesMetadataIterator.hasNext()) {
-        final Map<IDeviceID, List<TimeseriesMetadata>> device2TimeseriesMetadata =
-            timeseriesMetadataIterator.next();
-
-        for (IDeviceID deviceId : device2TimeseriesMetadata.keySet()) {
-          LOGGER.warn("sink load tsfile println device {}", deviceId);
-        }
-      }
-    } catch (Exception e) {
-      LOGGER.error(e.getMessage());
-    }
+    //    try (final TsFileSequenceReader reader =
+    //        new TsFileSequenceReader(
+    //            (((PipeTsFileInsertionEvent)
+    // tsFileInsertionEvent).getTsFile()).getAbsolutePath())) {
+    //      final TsFileSequenceReaderTimeseriesMetadataIterator timeseriesMetadataIterator =
+    //          new TsFileSequenceReaderTimeseriesMetadataIterator(reader, true, 1);
+    //      while (timeseriesMetadataIterator.hasNext()) {
+    //        final Map<IDeviceID, List<TimeseriesMetadata>> device2TimeseriesMetadata =
+    //            timeseriesMetadataIterator.next();
+    //
+    //        for (IDeviceID deviceId : device2TimeseriesMetadata.keySet()) {
+    //          LOGGER.warn("sink load tsfile println device {}", deviceId);
+    //        }
+    //      }
+    //    } catch (Exception e) {
+    //      LOGGER.error(e.getMessage());
+    //    }
 
     transferQueuedEventsIfNecessary();
     transferBatchedEventsIfNecessary();
