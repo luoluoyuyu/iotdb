@@ -46,6 +46,9 @@ import org.apache.iotdb.db.queryengine.plan.planner.plan.node.write.InsertRowNod
 import org.apache.iotdb.db.queryengine.plan.planner.plan.node.write.InsertRowsNode;
 import org.apache.iotdb.db.queryengine.plan.planner.plan.node.write.InsertTabletNode;
 import org.apache.iotdb.db.queryengine.plan.planner.plan.node.write.RelationalDeleteDataNode;
+import org.apache.iotdb.db.queryengine.plan.planner.plan.node.write.RelationalInsertRowNode;
+import org.apache.iotdb.db.queryengine.plan.planner.plan.node.write.RelationalInsertRowsNode;
+import org.apache.iotdb.db.queryengine.plan.planner.plan.node.write.RelationalInsertTabletNode;
 import org.apache.iotdb.db.schemaengine.schemaregion.utils.ResourceByPathUtils;
 import org.apache.iotdb.db.service.metrics.WritingMetrics;
 import org.apache.iotdb.db.storageengine.dataregion.DataRegion;
@@ -286,6 +289,11 @@ public class TsFileProcessor {
               insertRowNode.getDeviceID(), insertRowNode.getMeasurements(),
               insertRowNode.getDataTypes(), insertRowNode.getValues());
     }
+    if (insertRowNode instanceof RelationalInsertRowNode) {
+      logger.warn(
+          "MemTable insertRowNode start println device {}",
+          ((RelationalInsertRowNode) insertRowNode).getDeviceID());
+    }
     // recordScheduleMemoryBlockCost
     infoForMetrics[1] += System.nanoTime() - memControlStartTime;
 
@@ -337,7 +345,11 @@ public class TsFileProcessor {
     if (!sequence) {
       tsFileResource.updateEndTime(insertRowNode.getDeviceID(), insertRowNode.getTime());
     }
-
+    if (insertRowNode instanceof RelationalInsertRowNode) {
+      logger.warn(
+          " MemTable insertRowNode end println device {}",
+          ((RelationalInsertRowNode) insertRowNode).getDeviceID());
+    }
     tsFileResource.updateProgressIndex(insertRowNode.getProgressIndex());
     // RecordScheduleMemTableCost
     infoForMetrics[3] += System.nanoTime() - startTime;
@@ -352,6 +364,14 @@ public class TsFileProcessor {
 
     long[] memIncrements;
 
+    if (insertRowsNode instanceof RelationalInsertRowsNode) {
+      for (InsertRowNode rowNode :
+          ((RelationalInsertRowsNode) insertRowsNode).getInsertRowNodeList()) {
+        logger.warn(
+            "MemTable insertRowNode start println device {}",
+            ((RelationalInsertRowNode) rowNode).getDeviceID());
+      }
+    }
     long memControlStartTime = System.nanoTime();
     if (insertRowsNode.isMixingAlignment()) {
       List<InsertRowNode> alignedList = new ArrayList<>();
@@ -427,6 +447,15 @@ public class TsFileProcessor {
       // for unsequence tsfile, we have to update the endTime for each insertion.
       if (!sequence) {
         tsFileResource.updateEndTime(insertRowNode.getDeviceID(), insertRowNode.getTime());
+      }
+    }
+
+    if (insertRowsNode instanceof RelationalInsertRowsNode) {
+      for (InsertRowNode rowNode :
+          ((RelationalInsertRowsNode) insertRowsNode).getInsertRowNodeList()) {
+        logger.warn(
+            " MemTable insertRowNode end println device {}",
+            ((RelationalInsertRowNode) rowNode).getDeviceID());
       }
     }
 
@@ -569,6 +598,13 @@ public class TsFileProcessor {
 
     startTime = System.nanoTime();
 
+    if (insertTabletNode instanceof RelationalInsertTabletNode) {
+      for (int i = 0; i < ((RelationalInsertTabletNode) insertTabletNode).getRowCount(); i++) {
+        logger.warn(
+            "MemTable insertTableNode start println device {}",
+            ((RelationalInsertTabletNode) insertTabletNode).getDeviceID(i));
+      }
+    }
     PipeDataNodeAgent.runtime().assignSimpleProgressIndexIfNeeded(insertTabletNode);
     if (!insertTabletNode.isGeneratedByPipe()) {
       workMemTable.markAsNotGeneratedByPipe();
@@ -624,6 +660,13 @@ public class TsFileProcessor {
               deviceEndOffsetPairs.get(i).left,
               insertTabletNode.getTimes()[deviceEndOffsetPairs.get(i).right - 1]);
         }
+      }
+    }
+    if (insertTabletNode instanceof RelationalInsertTabletNode) {
+      for (int i = 0; i < ((RelationalInsertTabletNode) insertTabletNode).getRowCount(); i++) {
+        logger.warn(
+            " MemTable insertTableNode end println device {}",
+            ((RelationalInsertTabletNode) insertTabletNode).getDeviceID(i));
       }
     }
     tsFileResource.updateProgressIndex(insertTabletNode.getProgressIndex());
