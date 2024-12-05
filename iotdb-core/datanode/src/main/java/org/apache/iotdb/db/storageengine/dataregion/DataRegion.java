@@ -1889,7 +1889,8 @@ public class DataRegion implements IDataRegionForQuery {
     List<Future<?>> futures = new ArrayList<>();
     int count = 0;
     try {
-      logger.info("async force close all files in database: {}", databaseName + "-" + dataRegionId);
+      //      logger.info("async force close all files in database: {}", databaseName + "-" +
+      // dataRegionId);
       // to avoid concurrent modification problem, we need a new array list
       for (TsFileProcessor tsFileProcessor :
           new ArrayList<>(workSequenceTsFileProcessors.values())) {

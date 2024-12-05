@@ -30,6 +30,7 @@ import org.apache.iotdb.commons.pipe.extractor.IoTDBExtractor;
 import org.apache.iotdb.consensus.ConsensusFactory;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.pipe.event.common.heartbeat.PipeHeartbeatEvent;
+import org.apache.iotdb.db.pipe.event.common.tsfile.PipeTsFileInsertionEvent;
 import org.apache.iotdb.db.pipe.extractor.dataregion.historical.PipeHistoricalDataRegionExtractor;
 import org.apache.iotdb.db.pipe.extractor.dataregion.historical.PipeHistoricalDataRegionTsFileAndDeletionExtractor;
 import org.apache.iotdb.db.pipe.extractor.dataregion.realtime.PipeRealtimeDataRegionExtractor;
@@ -48,11 +49,17 @@ import org.apache.iotdb.pipe.api.event.dml.insertion.TabletInsertionEvent;
 import org.apache.iotdb.pipe.api.event.dml.insertion.TsFileInsertionEvent;
 import org.apache.iotdb.pipe.api.exception.PipeException;
 
+import org.apache.tsfile.file.metadata.IDeviceID;
+import org.apache.tsfile.file.metadata.TimeseriesMetadata;
+import org.apache.tsfile.read.TsFileSequenceReader;
+import org.apache.tsfile.read.TsFileSequenceReaderTimeseriesMetadataIterator;
 import org.apache.tsfile.utils.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -663,6 +670,34 @@ public class IoTDBDataRegionExtractor extends IoTDBExtractor {
       } else if (event instanceof PipeHeartbeatEvent) {
         PipeDataRegionExtractorMetrics.getInstance().markPipeHeartbeatEvent(taskID);
       }
+    }
+
+    if (event instanceof PipeTsFileInsertionEvent) {
+      try (final TsFileSequenceReader reader =
+          new TsFileSequenceReader(
+              (((PipeTsFileInsertionEvent) event).getTsFile()).getAbsolutePath())) {
+        final TsFileSequenceReaderTimeseriesMetadataIterator timeseriesMetadataIterator =
+            new TsFileSequenceReaderTimeseriesMetadataIterator(reader, true, 1);
+        while (timeseriesMetadataIterator.hasNext()) {
+          final Map<IDeviceID, List<TimeseriesMetadata>> device2TimeseriesMetadata =
+              timeseriesMetadataIterator.next();
+
+          for (IDeviceID deviceId : device2TimeseriesMetadata.keySet()) {
+            LOGGER.warn("{} extractor realtime load tsfile println device {}", pipeName, deviceId);
+          }
+        }
+      } catch (Exception e) {
+        LOGGER.error(e.getMessage());
+      }
+    } else if (event instanceof TabletInsertionEvent) {
+      TabletInsertionEvent tabletInsertionEvent = (TabletInsertionEvent) event;
+      tabletInsertionEvent.processTablet(
+          (a, rowCollector) -> {
+            for (int i = 0; i < a.getRowSize(); i++) {
+              LOGGER.warn(
+                  "{} extractor realtime insertNode println device {}", pipeName, a.getDeviceID(i));
+            }
+          });
     }
 
     return event;
