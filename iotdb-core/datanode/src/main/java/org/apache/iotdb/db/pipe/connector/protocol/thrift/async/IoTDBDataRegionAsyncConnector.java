@@ -144,6 +144,14 @@ public class IoTDBDataRegionAsyncConnector extends IoTDBConnector {
 
   @Override
   public void transfer(final TabletInsertionEvent tabletInsertionEvent) throws Exception {
+    //
+    //    tabletInsertionEvent.processTablet(
+    //        (a, rowCollector) -> {
+    //          for (int i = 0; i < a.getRowSize(); i++) {
+    //            LOGGER.warn("sink insertNode println device {}", a.getDeviceID(i));
+    //          }
+    //        });
+
     transferQueuedEventsIfNecessary();
 
     if (!(tabletInsertionEvent instanceof PipeInsertNodeTabletInsertionEvent)
@@ -300,6 +308,25 @@ public class IoTDBDataRegionAsyncConnector extends IoTDBConnector {
 
   @Override
   public void transfer(final TsFileInsertionEvent tsFileInsertionEvent) throws Exception {
+
+    //    try (final TsFileSequenceReader reader =
+    //        new TsFileSequenceReader(
+    //            (((PipeTsFileInsertionEvent)
+    // tsFileInsertionEvent).getTsFile()).getAbsolutePath())) {
+    //      final TsFileSequenceReaderTimeseriesMetadataIterator timeseriesMetadataIterator =
+    //          new TsFileSequenceReaderTimeseriesMetadataIterator(reader, true, 1);
+    //      while (timeseriesMetadataIterator.hasNext()) {
+    //        final Map<IDeviceID, List<TimeseriesMetadata>> device2TimeseriesMetadata =
+    //            timeseriesMetadataIterator.next();
+    //
+    //        for (IDeviceID deviceId : device2TimeseriesMetadata.keySet()) {
+    //          LOGGER.warn("sink load tsfile println device {}", deviceId);
+    //        }
+    //      }
+    //    } catch (Exception e) {
+    //      LOGGER.error(e.getMessage());
+    //    }
+
     transferQueuedEventsIfNecessary();
     transferBatchedEventsIfNecessary();
 
