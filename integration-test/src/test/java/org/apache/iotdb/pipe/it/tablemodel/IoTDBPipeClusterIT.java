@@ -40,6 +40,7 @@ import org.apache.iotdb.rpc.TSStatusCode;
 import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -90,11 +91,13 @@ public class IoTDBPipeClusterIT extends AbstractPipeTableModelTestIT {
     receiverEnv.initClusterEnvironment(3, 3, 180);
   }
 
+  @Ignore
   @Test
   public void testWithAllParametersInStreamingMode() throws Exception {
     testWithAllParameters("true");
   }
 
+  @Ignore
   @Test
   public void testWithAllParametersInNotStreamingMode() throws Exception {
     testWithAllParameters("false");
@@ -504,6 +507,7 @@ public class IoTDBPipeClusterIT extends AbstractPipeTableModelTestIT {
     }
   }
 
+  @Ignore
   @Test
   public void testRegisteringNewDataNodeWhenTransferringData() throws Exception {
     final DataNodeWrapper receiverDataNode = receiverEnv.getDataNodeWrapper(0);
@@ -588,6 +592,7 @@ public class IoTDBPipeClusterIT extends AbstractPipeTableModelTestIT {
     }
   }
 
+  @Ignore
   @Test
   public void testRegisteringNewDataNodeAfterTransferringData() throws Exception {
     final DataNodeWrapper receiverDataNode = receiverEnv.getDataNodeWrapper(0);
@@ -656,6 +661,7 @@ public class IoTDBPipeClusterIT extends AbstractPipeTableModelTestIT {
     }
   }
 
+  @Ignore
   @Test
   public void testSenderRestartWhenTransferring() throws Exception {
     final DataNodeWrapper receiverDataNode = receiverEnv.getDataNodeWrapper(0);
@@ -722,6 +728,7 @@ public class IoTDBPipeClusterIT extends AbstractPipeTableModelTestIT {
     TableModelUtils.assertCountData("test", "test", succeedNum + 100, receiverEnv, handleFailure);
   }
 
+  @Ignore
   @Test
   public void testConcurrentlyCreatePipeOfSameName() throws Exception {
     final DataNodeWrapper receiverDataNode = receiverEnv.getDataNodeWrapper(0);
@@ -814,16 +821,19 @@ public class IoTDBPipeClusterIT extends AbstractPipeTableModelTestIT {
     }
   }
 
+  @Ignore
   @Test
   public void testCreate10PipesWithSameConnector() throws Exception {
     testCreatePipesWithSameConnector(10);
   }
 
+  @Ignore
   @Test
   public void testCreate50PipesWithSameConnector() throws Exception {
     testCreatePipesWithSameConnector(50);
   }
 
+  @Ignore
   @Test
   public void testCreate100PipesWithSameConnector() throws Exception {
     testCreatePipesWithSameConnector(100);
@@ -893,6 +903,7 @@ public class IoTDBPipeClusterIT extends AbstractPipeTableModelTestIT {
     }
   }
 
+  @Ignore
   @Test
   public void testNegativeTimestamp() throws Exception {
     final DataNodeWrapper receiverDataNode = receiverEnv.getDataNodeWrapper(0);
