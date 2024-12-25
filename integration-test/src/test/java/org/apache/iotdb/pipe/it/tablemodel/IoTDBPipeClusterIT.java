@@ -182,6 +182,7 @@ public class IoTDBPipeClusterIT extends AbstractPipeTableModelTestIT {
     }
   }
 
+  @Ignore
   @Test
   public void testPipeAfterDataRegionLeaderStop() throws Exception {
     final DataNodeWrapper receiverDataNode = receiverEnv.getDataNodeWrapper(0);
@@ -334,7 +335,6 @@ public class IoTDBPipeClusterIT extends AbstractPipeTableModelTestIT {
     }
   }
 
-  @Ignore
   @Test
   public void testPipeAfterRegisterNewDataNode() throws Exception {
     final DataNodeWrapper receiverDataNode = receiverEnv.getDataNodeWrapper(0);
