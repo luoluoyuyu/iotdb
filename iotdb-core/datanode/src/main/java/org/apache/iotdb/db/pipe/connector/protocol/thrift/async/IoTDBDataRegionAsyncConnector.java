@@ -354,6 +354,7 @@ public class IoTDBDataRegionAsyncConnector extends IoTDBConnector {
     try {
       LOGGER.warn("transfer event transfer deiceID{}", deviceId);
       client = clientManager.borrowClient(deviceId);
+      LOGGER.warn("transfer event transfer deiceID start {}", deviceId);
       pipeTransferTabletReqHandler.transfer(client);
       LOGGER.warn("transfer event transfer deiceID end {}", deviceId);
     } catch (final Exception ex) {

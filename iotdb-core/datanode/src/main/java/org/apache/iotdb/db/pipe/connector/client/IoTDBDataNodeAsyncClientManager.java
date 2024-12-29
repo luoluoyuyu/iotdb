@@ -174,6 +174,7 @@ public class IoTDBDataNodeAsyncClientManager extends IoTDBClientManager
    */
   private boolean handshakeIfNecessary(
       TEndPoint targetNodeUrl, AsyncPipeDataTransferServiceClient client) throws Exception {
+    LOGGER.info("handshakeIfNecessary start {}", client.isHandshakeFinished());
     if (client.isHandshakeFinished()) {
       return true;
     }
@@ -264,11 +265,14 @@ public class IoTDBDataNodeAsyncClientManager extends IoTDBClientManager
         exception.set(null);
 
         client.setTimeoutDynamically(PipeConfig.getInstance().getPipeConnectorHandshakeTimeoutMs());
+        LOGGER.info("handshakeIfNecessary pipeTransfer start");
         client.pipeTransfer(
             PipeTransferDataNodeHandshakeV1Req.toTPipeTransferReq(
                 CommonDescriptor.getInstance().getConfig().getTimestampPrecision()),
             callback);
+        LOGGER.info("handshakeIfNecessary pipeTransfer end");
         waitHandshakeFinished(isHandshakeFinished);
+        LOGGER.info("handshakeIfNecessary waitHandshakeFinished end");
       }
       if (exception.get() != null) {
         throw new PipeConnectionException("Failed to handshake.", exception.get());
@@ -341,9 +345,12 @@ public class IoTDBDataNodeAsyncClientManager extends IoTDBClientManager
         final TEndPoint targetNodeUrl = endPointList.get((int) (currentClientIndex++ % clientSize));
         final AsyncPipeDataTransferServiceClient client =
             endPoint2Client.borrowClient(targetNodeUrl);
+        LOGGER.info("handshakeIfNecessary start");
         if (handshakeIfNecessary(targetNodeUrl, client)) {
+          LOGGER.info("handshakeIfNecessary end");
           return client;
         }
+        LOGGER.info("handshakeIfNecessary end");
       }
     }
   }
