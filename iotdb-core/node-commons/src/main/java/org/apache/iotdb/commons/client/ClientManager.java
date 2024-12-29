@@ -51,7 +51,10 @@ public class ClientManager<K, V> implements IClientManager<K, V> {
       throw new BorrowNullClientManagerException();
     }
     try {
-      return pool.borrowObject(node);
+      LOGGER.info("borrowObject start ");
+      V v = pool.borrowObject(node);
+      LOGGER.info("borrowObject end ");
+      return v;
     } catch (Exception e) {
       throw new ClientManagerException(e);
     }
@@ -91,9 +94,11 @@ public class ClientManager<K, V> implements IClientManager<K, V> {
   @Override
   public void close() {
     pool.close();
+    LOGGER.info("client pool closed");
     // we need to release tManagers for AsyncThriftClientFactory
     if (pool.getFactory() instanceof AsyncThriftClientFactory) {
       ((AsyncThriftClientFactory<K, V>) pool.getFactory()).close();
+      LOGGER.info("client Factory pool closed");
     }
   }
 }
