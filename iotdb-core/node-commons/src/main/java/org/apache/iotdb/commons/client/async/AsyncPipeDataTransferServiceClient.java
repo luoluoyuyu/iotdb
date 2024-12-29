@@ -215,7 +215,7 @@ public class AsyncPipeDataTransferServiceClient extends IClientRPCService.AsyncC
         final PooledObject<AsyncPipeDataTransferServiceClient> pooledObject) {
       LOGGER.info("AsyncPipeDataTransferServiceClient validateObject");
       final boolean b = pooledObject.getObject().isReady();
-      LOGGER.info("AsyncPipeDataTransferServiceClient validateObject end");
+      LOGGER.info("AsyncPipeDataTransferServiceClient validateObject end {}", b);
       return b;
     }
   }
