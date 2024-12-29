@@ -246,9 +246,13 @@ public class IoTDBDataNodeAsyncClientManager extends IoTDBClientManager
       params.put(PipeTransferHandshakeConstant.HANDSHAKE_KEY_USERNAME, username);
       params.put(PipeTransferHandshakeConstant.HANDSHAKE_KEY_PASSWORD, password);
 
+      LOGGER.info("handshakeIfNecessary setTimeoutDynamically start");
       client.setTimeoutDynamically(PipeConfig.getInstance().getPipeConnectorHandshakeTimeoutMs());
+      LOGGER.info("handshakeIfNecessary pipeTransfer start");
       client.pipeTransfer(PipeTransferDataNodeHandshakeV2Req.toTPipeTransferReq(params), callback);
+      LOGGER.info("handshakeIfNecessary pipeTransfer end");
       waitHandshakeFinished(isHandshakeFinished);
+      LOGGER.info("handshakeIfNecessary waitHandshakeFinished end");
 
       // Retry to handshake by PipeTransferHandshakeV1Req.
       if (resp.get() != null
