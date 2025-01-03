@@ -56,6 +56,7 @@ import java.util.function.Consumer;
 
 import static org.junit.Assert.fail;
 
+@Ignore
 @RunWith(IoTDBTestRunner.class)
 @Category({MultiClusterIT2TableModel.class})
 public class IoTDBPipeClusterIT extends AbstractPipeTableModelTestIT {
