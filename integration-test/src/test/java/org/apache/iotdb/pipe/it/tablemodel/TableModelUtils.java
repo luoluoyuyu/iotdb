@@ -210,8 +210,8 @@ public class TableModelUtils {
       final BaseEnv baseEnv,
       final boolean allowNullValue) {
     final Tablet tablet = generateTablet(tableName, start, end, allowNullValue, true);
-    ITableSessionPool tableSessionPool = baseEnv.getTableSessionPool(1);
-    try (final ITableSession session = tableSessionPool.getSession()) {
+    try (ITableSessionPool tableSessionPool = baseEnv.getTableSessionPool(1);
+        final ITableSession session = tableSessionPool.getSession()) {
       session.executeNonQueryStatement("use " + dataBaseName);
       session.insert(tablet);
       session.executeNonQueryStatement("flush");

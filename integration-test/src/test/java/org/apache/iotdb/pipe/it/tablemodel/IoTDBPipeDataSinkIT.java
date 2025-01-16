@@ -46,7 +46,6 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-@Ignore
 @RunWith(IoTDBTestRunner.class)
 @Category({MultiClusterIT2TableModel.class})
 public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
