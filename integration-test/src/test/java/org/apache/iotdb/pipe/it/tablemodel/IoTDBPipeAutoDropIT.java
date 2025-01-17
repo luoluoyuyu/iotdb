@@ -45,7 +45,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import static org.apache.iotdb.confignode.it.regionmigration.IoTDBRegionMigrateReliabilityITFramework.closeQuietly;
+import static org.apache.iotdb.util.MagicUtils.makeItCloseQuietly;
 import static org.awaitility.Awaitility.await;
 
 @Ignore
@@ -107,8 +107,8 @@ public class IoTDBPipeAutoDropIT extends AbstractPipeTableModelTestIT {
           handleFailure);
     }
 
-    try (final Connection connection = closeQuietly(senderEnv.getConnection());
-        final Statement statement = closeQuietly(connection.createStatement()); ) {
+    try (final Connection connection = makeItCloseQuietly(senderEnv.getConnection());
+        final Statement statement = makeItCloseQuietly(connection.createStatement()); ) {
       ResultSet result = statement.executeQuery("show pipes");
       await()
           .pollInSameThread()
@@ -189,8 +189,8 @@ public class IoTDBPipeAutoDropIT extends AbstractPipeTableModelTestIT {
           handleFailure);
     }
 
-    try (final Connection connection = closeQuietly(senderEnv.getConnection());
-        final Statement statement = closeQuietly(connection.createStatement()); ) {
+    try (final Connection connection = makeItCloseQuietly(senderEnv.getConnection());
+        final Statement statement = makeItCloseQuietly(connection.createStatement()); ) {
       ResultSet result = statement.executeQuery("show pipes");
       await()
           .pollInSameThread()
