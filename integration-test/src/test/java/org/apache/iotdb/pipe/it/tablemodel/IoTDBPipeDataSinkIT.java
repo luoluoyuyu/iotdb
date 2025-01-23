@@ -680,5 +680,4 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
       deviceIDEndIndex += 2;
     }
   }
-
 }
