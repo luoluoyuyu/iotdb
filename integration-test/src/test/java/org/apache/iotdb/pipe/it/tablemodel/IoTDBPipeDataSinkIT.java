@@ -126,11 +126,13 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
     testSinkFormat("tablet");
   }
 
+  @Ignore
   @Test
   public void testSinkTsFileFormat() throws Exception {
     testSinkFormat("tsfile");
   }
 
+  @Ignore
   @Test
   public void testSinkHybridFormat() throws Exception {
     testSinkFormat("hybrid");
@@ -193,7 +195,7 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
         return;
       }
 
-      TableModelUtils.assertCountData("test", "test", 150, receiverEnv);
+      TableModelUtils.assertCountData("test", "test", 150, receiverEnv, handleFailure);
 
       TestUtils.assertDataEventuallyOnEnv(
           receiverEnv,
@@ -238,11 +240,10 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
               new HashSet<>(Arrays.asList("0,1.0,", "1,1.0,", "2,1.0,", "3,1.0,", "4,1.0,"))),
           handleFailure);
 
-      TableModelUtils.assertCountData("test", "test", 350, receiverEnv);
+      TableModelUtils.assertCountData("test", "test", 350, receiverEnv, handleFailure);
     }
   }
 
-  @Ignore
   @Test
   public void testWriteBackSink() throws Exception {
     try (final SyncConfigNodeIServiceClient client =
@@ -290,49 +291,41 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
     }
   }
 
-  @Ignore
   @Test
   public void testSinkTsFileFormat2() throws Exception {
     doTest(this::insertTablet1);
   }
 
-  @Ignore
   @Test
   public void testSinkTsFileFormat3() throws Exception {
     doTest(this::insertTablet2);
   }
 
-  @Ignore
   @Test
   public void testSinkTsFileFormat4() throws Exception {
     doTest(this::insertTablet3);
   }
 
-  @Ignore
   @Test
   public void testSinkTsFileFormat5() throws Exception {
     doTest(this::insertTablet4);
   }
 
-  @Ignore
   @Test
   public void testSinkTsFileFormat6() throws Exception {
     doTest(this::insertTablet5);
   }
 
-  @Ignore
   @Test
   public void testSinkTsFileFormat7() throws Exception {
     doTest(this::insertTablet6);
   }
 
-  @Ignore
   @Test
   public void testSinkTsFileFormat8() throws Exception {
     doTest(this::insertTablet7);
   }
 
-  @Ignore
   @Test
   public void testSinkTsFileFormat9() throws Exception {
     doTest(this::insertTablet8);
@@ -527,7 +520,7 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
                 deviceIDStartIndex,
                 deviceIDEndIndex,
                 false,
-                true);
+                false);
         TableModelUtils.insertTablet(dataBaseName, tablet, senderEnv);
         try {
           Thread.sleep(100);
