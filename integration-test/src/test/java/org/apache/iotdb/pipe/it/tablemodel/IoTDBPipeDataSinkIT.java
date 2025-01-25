@@ -120,7 +120,6 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
     }
   }
 
-  @Ignore
   @Test
   public void testSinkTabletFormat() throws Exception {
     testSinkFormat("tablet");
@@ -242,7 +241,6 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
     }
   }
 
-  @Ignore
   @Test
   public void testWriteBackSink() throws Exception {
     try (final SyncConfigNodeIServiceClient client =
@@ -290,49 +288,41 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
     }
   }
 
-  @Ignore
   @Test
   public void testSinkTsFileFormat2() throws Exception {
     doTest(this::insertTablet1);
   }
 
-  @Ignore
   @Test
   public void testSinkTsFileFormat3() throws Exception {
     doTest(this::insertTablet2);
   }
 
-  @Ignore
   @Test
   public void testSinkTsFileFormat4() throws Exception {
     doTest(this::insertTablet3);
   }
 
-  @Ignore
   @Test
   public void testSinkTsFileFormat5() throws Exception {
     doTest(this::insertTablet4);
   }
 
-  @Ignore
   @Test
   public void testSinkTsFileFormat6() throws Exception {
     doTest(this::insertTablet5);
   }
 
-  @Ignore
   @Test
   public void testSinkTsFileFormat7() throws Exception {
     doTest(this::insertTablet6);
   }
 
-  @Ignore
   @Test
   public void testSinkTsFileFormat8() throws Exception {
     doTest(this::insertTablet7);
   }
 
-  @Ignore
   @Test
   public void testSinkTsFileFormat9() throws Exception {
     doTest(this::insertTablet8);
@@ -527,7 +517,7 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
                 deviceIDStartIndex,
                 deviceIDEndIndex,
                 false,
-                true);
+                false);
         TableModelUtils.insertTablet(dataBaseName, tablet, senderEnv);
         try {
           Thread.sleep(100);
