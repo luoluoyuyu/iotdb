@@ -53,6 +53,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
@@ -122,6 +123,12 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeTableModelTes
         senderSession.executeNonQueryStatement("flush");
       }
 
+      final Consumer<String> handleFailure =
+          o -> {
+            TestUtils.executeNonQueryWithRetry(senderEnv, "flush");
+            TestUtils.executeNonQueryWithRetry(receiverEnv, "flush");
+          };
+
       // Verify receiver data
       long timeoutSeconds = 600;
       List<List<Object>> expectedValues =
@@ -139,7 +146,11 @@ public class IoTDBPipeTypeConversionISessionIT extends AbstractPipeTableModelTes
                       expectedValues,
                       tablet.getTimestamps());
                 } catch (Exception e) {
+                  handleFailure.accept(e.getMessage());
                   fail(e.getMessage());
+                } catch (Error e) {
+                  handleFailure.accept(e.getMessage());
+                  throw e;
                 }
               });
     } catch (Exception e) {
