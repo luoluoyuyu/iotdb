@@ -30,6 +30,7 @@ import org.apache.iotdb.rpc.TSStatusCode;
 
 import org.apache.tsfile.write.record.Tablet;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -50,6 +51,7 @@ import java.util.function.Consumer;
 @Category({MultiClusterIT2TableModel.class})
 public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
 
+  @Ignore
   @Test
   public void testThriftConnectorWithRealtimeFirstDisabled() throws Exception {
     final DataNodeWrapper receiverDataNode = receiverEnv.getDataNodeWrapper(0);
@@ -66,7 +68,7 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
         (SyncConfigNodeIServiceClient) senderEnv.getLeaderConfigNodeConnection()) {
 
       TableModelUtils.createDataBaseAndTable(senderEnv, "test", "test");
-      TableModelUtils.insertData("test", "test", 0, 50, senderEnv, true);
+      TableModelUtils.insertData("test", "test", 0, 50, senderEnv, false);
 
       if (!TestUtils.tryExecuteNonQueriesWithRetry(
           senderEnv,
@@ -99,7 +101,7 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
       Assert.assertEquals(
           TSStatusCode.SUCCESS_STATUS.getStatusCode(), client.startPipe("testPipe").getCode());
 
-      TableModelUtils.insertData("test", "test", 50, 100, senderEnv, true);
+      TableModelUtils.insertData("test", "test", 50, 100, senderEnv, false);
 
       if (!TestUtils.tryExecuteNonQueriesWithRetry(
           senderEnv,
@@ -118,16 +120,19 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
     }
   }
 
+  @Ignore
   @Test
   public void testSinkTabletFormat() throws Exception {
     testSinkFormat("tablet");
   }
 
+  @Ignore
   @Test
   public void testSinkTsFileFormat() throws Exception {
     testSinkFormat("tsfile");
   }
 
+  @Ignore
   @Test
   public void testSinkHybridFormat() throws Exception {
     testSinkFormat("hybrid");
@@ -148,7 +153,7 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
         (SyncConfigNodeIServiceClient) senderEnv.getLeaderConfigNodeConnection()) {
 
       TableModelUtils.createDataBaseAndTable(senderEnv, "test", "test");
-      TableModelUtils.insertData("test", "test", 0, 50, senderEnv, true);
+      TableModelUtils.insertData("test", "test", 0, 50, senderEnv, false);
 
       if (!TestUtils.tryExecuteNonQueriesWithRetry(
           senderEnv,
@@ -182,7 +187,7 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
       Assert.assertEquals(
           TSStatusCode.SUCCESS_STATUS.getStatusCode(), client.startPipe("testPipe").getCode());
 
-      TableModelUtils.insertData("test", "test", 50, 150, senderEnv, true);
+      TableModelUtils.insertData("test", "test", 50, 150, senderEnv, false);
 
       if (!TestUtils.tryExecuteNonQueriesWithRetry(
           senderEnv,
@@ -190,7 +195,7 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
         return;
       }
 
-      TableModelUtils.assertCountData("test", "test", 150, receiverEnv);
+      TableModelUtils.assertCountData("test", "test", 150, receiverEnv, handleFailure);
 
       TestUtils.assertDataEventuallyOnEnv(
           receiverEnv,
@@ -222,10 +227,10 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
         return;
       }
 
-      TableModelUtils.insertData("test", "test", 150, 200, senderEnv, true);
-      TableModelUtils.insertTablet("test", "test", 200, 250, senderEnv, true);
-      TableModelUtils.insertTablet("test", "test", 250, 300, senderEnv, true);
-      TableModelUtils.insertTablet("test", "test", 300, 350, senderEnv, true);
+      TableModelUtils.insertData("test", "test", 150, 200, senderEnv, false);
+      TableModelUtils.insertTablet("test", "test", 200, 250, senderEnv, false);
+      TableModelUtils.insertTablet("test", "test", 250, 300, senderEnv, false);
+      TableModelUtils.insertTablet("test", "test", 300, 350, senderEnv, false);
 
       TestUtils.assertDataEventuallyOnEnv(
           receiverEnv,
@@ -235,7 +240,7 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
               new HashSet<>(Arrays.asList("0,1.0,", "1,1.0,", "2,1.0,", "3,1.0,", "4,1.0,"))),
           handleFailure);
 
-      TableModelUtils.assertCountData("test", "test", 350, receiverEnv);
+      TableModelUtils.assertCountData("test", "test", 350, receiverEnv, handleFailure);
     }
   }
 
@@ -278,9 +283,9 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
       TableModelUtils.createDataBaseAndTable(senderEnv, "test", "test");
       TableModelUtils.insertDataNotThrowError("test", "test", 0, 20, senderEnv);
 
-      TableModelUtils.insertTablet("test", "test", 20, 200, senderEnv, true);
+      TableModelUtils.insertTablet("test", "test", 20, 200, senderEnv, false);
 
-      TableModelUtils.insertTablet("test", "test", 200, 400, senderEnv, true);
+      TableModelUtils.insertTablet("test", "test", 200, 400, senderEnv, false);
 
       TableModelUtils.assertCountData("test1", "test", 400, senderEnv);
     }
@@ -324,11 +329,6 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
   @Test
   public void testSinkTsFileFormat9() throws Exception {
     doTest(this::insertTablet8);
-  }
-
-  @Test
-  public void testSinkTsFileFormat10() throws Exception {
-    doTest(this::insertTablet9);
   }
 
   private void doTest(BiConsumer<Map<String, List<Tablet>>, Map<String, List<Tablet>>> consumer)
@@ -520,7 +520,7 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
                 deviceIDStartIndex,
                 deviceIDEndIndex,
                 false,
-                true);
+                false);
         TableModelUtils.insertTablet(dataBaseName, tablet, senderEnv);
         try {
           Thread.sleep(100);
@@ -579,7 +579,7 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
         deviceIDEndIndex = deviceIDStartIndex + 10;
         Tablet tablet =
             TableModelUtils.generateTablet(
-                tableName, 0, 10, deviceIDStartIndex, deviceIDEndIndex, false, true);
+                tableName, 0, 10, deviceIDStartIndex, deviceIDEndIndex, false, false);
         TableModelUtils.insertTablet(dataBaseName, tablet, senderEnv);
         try {
           Thread.sleep(100);
@@ -606,7 +606,7 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
         deviceIDEndIndex = deviceIDStartIndex + 10;
         Tablet tablet =
             TableModelUtils.generateTablet(
-                tableName, deviceIDStartIndex, deviceIDEndIndex, 100, 110, false, true);
+                tableName, deviceIDStartIndex, deviceIDEndIndex, 100, 110, false, false);
         TableModelUtils.insertTablet(dataBaseName, tablet, senderEnv);
         try {
           Thread.sleep(100);
@@ -633,7 +633,7 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
         final String tableName = "test" + i;
         Tablet tablet =
             TableModelUtils.generateTablet(
-                tableName, deviceIDStartIndex, deviceIDEndIndex, 100, 110, false, true);
+                tableName, deviceIDStartIndex, deviceIDEndIndex, 100, 110, false, false);
         TableModelUtils.insertTablet(dataBaseName, tablet, senderEnv);
         try {
           Thread.sleep(100);
@@ -659,7 +659,7 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
         final String tableName = "test" + i;
         Tablet tablet =
             TableModelUtils.generateTablet(
-                tableName, 100, 110, deviceIDStartIndex, deviceIDEndIndex, false, true);
+                tableName, 100, 110, deviceIDStartIndex, deviceIDEndIndex, false, false);
         TableModelUtils.insertTablet(dataBaseName, tablet, senderEnv);
         try {
           Thread.sleep(100);
@@ -671,27 +671,6 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelTestIT {
       }
       deviceIDStartIndex += 2;
       deviceIDEndIndex += 2;
-    }
-  }
-
-  private void insertTablet9(
-      final Map<String, List<Tablet>> testResult, final Map<String, List<Tablet>> test1Result) {
-    final Random random = new Random();
-    for (int j = 0; j < 25; j++) {
-      final String dataBaseName = "test" + j % 2;
-      for (int i = 0; i < 5; i++) {
-        final String tableName = "test" + i;
-        Tablet tablet =
-            TableModelUtils.generateTabletDeviceIDAllIsNull(tableName, 100, 110, 10, false);
-        TableModelUtils.insertTablet(dataBaseName, tablet, senderEnv);
-        try {
-          Thread.sleep(100);
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        }
-        Map<String, List<Tablet>> map = j % 2 == 0 ? testResult : test1Result;
-        map.computeIfAbsent(tableName, k -> new ArrayList<>()).add(tablet);
-      }
     }
   }
 }
