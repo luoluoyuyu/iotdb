@@ -223,6 +223,7 @@ public abstract class WrappedInsertStatement extends WrappedStatement
             TSFileDescriptor.getInstance().getConfig().getCompressor());
     innerTreeStatement.setMeasurementSchema(measurementSchema, i);
     try {
+
       innerTreeStatement.selfCheckDataTypes(i);
     } catch (DataTypeMismatchException | PathNotExistException e) {
       throw new SemanticException(e);
