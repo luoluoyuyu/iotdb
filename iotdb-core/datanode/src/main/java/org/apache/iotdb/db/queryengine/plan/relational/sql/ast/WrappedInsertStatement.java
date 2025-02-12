@@ -223,8 +223,17 @@ public abstract class WrappedInsertStatement extends WrappedStatement
             TSFileDescriptor.getInstance().getConfig().getCompressor());
     innerTreeStatement.setMeasurementSchema(measurementSchema, i);
     try {
-
+      System.out.println(
+          "1measurement:"
+              + innerTreeStatement.getMeasurements()[i]
+              + "    dataType"
+              + innerTreeStatement.getDataType(i));
       innerTreeStatement.selfCheckDataTypes(i);
+      System.out.println(
+          "2measurement:"
+              + innerTreeStatement.getMeasurements()[i]
+              + "    dataType"
+              + innerTreeStatement.getDataType(i));
     } catch (DataTypeMismatchException | PathNotExistException e) {
       throw new SemanticException(e);
     }
