@@ -72,6 +72,7 @@ jobs:
             local test_output
           
             while [ $attempt -le $max_attempts ]; do
+              mvn clean
               mvn clean verify \
               -P with-integration-tests \
               -DskipUTs \
