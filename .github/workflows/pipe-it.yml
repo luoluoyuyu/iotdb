@@ -65,42 +65,31 @@ jobs:
         # we do not compile client-cpp for saving time, it is tested in client.yml
         # we can skip influxdb-protocol because it has been tested separately in influxdb-protocol.yml
         run: |
-          retry() {
-            local -i max_attempts=100000
-            local -i attempt=1
-            local -i retry_sleep=5
-            local test_output
+          local -i max_attempts=100000
+          local -i attempt=1
+          local -i retry_sleep=5
+          local test_output
           
-            while [ $attempt -le $max_attempts ]; do
-              mvn clean
-              mvn clean verify \
-              -P with-integration-tests \
-              -DskipUTs \
-              -DintegrationTest.forkCount=1 -DConfigNodeMaxHeapSize=256 -DDataNodeMaxHeapSize=1024 -DDataNodeMaxDirectMemorySize=768 \
-              -DClusterConfigurations=${{ matrix.cluster }},${{ matrix.cluster }} \
-              -pl integration-test \
-              -am -PMultiClusterIT2DualTableManualEnhanced \
-              -ntp >> ~/run-tests-$attempt.log
-              test_output=$(cat ~/run-tests-$attempt.log) 
+          while [ $attempt -le $max_attempts ]; do
+            mvn clean verify \
+            -P with-integration-tests \
+            -DskipUTs \
+            -DintegrationTest.forkCount=1 -DConfigNodeMaxHeapSize=256 -DDataNodeMaxHeapSize=1024 -DDataNodeMaxDirectMemorySize=768 \
+            -DClusterConfigurations=${{ matrix.cluster }},${{ matrix.cluster }} \
+            -pl integration-test \
+            -am -PMultiClusterIT2DualTableManualEnhanced \
+            -ntp
 
-              mv ~/run-tests-$attempt.log integration-test/target/cluster-logs/
-
-              echo "==================== BEGIN: ~/run-tests-$attempt.log ===================="          
-              echo "$test_output"
-              echo "==================== END: ~/run-tests-$attempt.log ======================"
-
-              if [ $? -eq 0 ]; then
-                echo "Test succeeded on attempt $attempt."
-                attempt=$((attempt + 1))
-                echo "Proceeding to next attempt..."
-              else
-                echo "Test failed on attempt $attempt."
-                echo "Stopping the script due to failure."
-                return 1
-              fi
-            done
-          }
-          retry
+            if [ $? -eq 0 ]; then
+              echo "Test succeeded on attempt $attempt."
+              attempt=$((attempt + 1))
+              echo "Proceeding to next attempt..."
+            else
+              echo "Test failed on attempt $attempt."
+              echo "Stopping the script due to failure."
+              return 1
+            fi
+          done
       - name: Upload Artifact
         if: failure()
         uses: actions/upload-artifact@v4
