@@ -822,6 +822,13 @@ public class InsertNodeMemoryEstimator {
       if (measurementSchemas[i] == null || measurementSchemas[i].getType() == null) {
         continue;
       }
+      System.out.println(
+          "measurement: "
+              + measurementSchemas[i].getMeasurementName()
+              + " measurementType: "
+              + measurementSchemas[i].getType()
+              + " value: "
+              + columns[i]);
       switch (measurementSchemas[i].getType()) {
         case INT64:
         case TIMESTAMP:

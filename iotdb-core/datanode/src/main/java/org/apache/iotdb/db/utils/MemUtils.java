@@ -144,6 +144,11 @@ public class MemUtils {
       if (!insertTabletNode.isValidMeasurement(i)) {
         continue;
       }
+      System.out.println(
+          "insertNode measurement: "
+              + insertTabletNode.getMeasurements()[i]
+              + " insertNode type"
+              + insertTabletNode.getDataTypes()[i]);
       if (results == null) {
         memSize += (long) (end - start) * insertTabletNode.getDataTypes()[i].getDataTypeSize();
       } else {
