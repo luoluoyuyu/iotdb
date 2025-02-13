@@ -75,6 +75,11 @@ jobs:
             -am -PMultiClusterIT2DualTableManualEnhanced \
             -ntp
 
+            SOURCE_FILE="~/heapdump.hprof"
+            if [ -f "$SOURCE_FILE" ]; then
+              mv ~/heapdump.hprof integration-test/target
+            fi
+
             if [ $? -eq 1 ]; then
               echo "Test failed on attempt $attempt."
               echo "Stopping the script due to failure."

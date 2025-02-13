@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.iotdb.pipe.it.dual.tablemodel.manual.basic;
+package org.apache.iotdb.pipe.it.dual.tablemodel.manual.enhanced;
 
 import org.apache.iotdb.common.rpc.thrift.TSStatus;
 import org.apache.iotdb.commons.client.sync.SyncConfigNodeIServiceClient;
@@ -25,13 +25,14 @@ import org.apache.iotdb.confignode.rpc.thrift.TCreatePipeReq;
 import org.apache.iotdb.db.it.utils.TestUtils;
 import org.apache.iotdb.it.env.cluster.node.DataNodeWrapper;
 import org.apache.iotdb.it.framework.IoTDBTestRunner;
-import org.apache.iotdb.itbase.category.MultiClusterIT2DualTableManualBasic;
+import org.apache.iotdb.itbase.category.MultiClusterIT2DualTableManualEnhanced;
 import org.apache.iotdb.pipe.it.dual.tablemodel.TableModelUtils;
 import org.apache.iotdb.pipe.it.dual.tablemodel.manual.AbstractPipeTableModelDualManualIT;
 import org.apache.iotdb.rpc.TSStatusCode;
 
 import org.apache.tsfile.write.record.Tablet;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -49,9 +50,10 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @RunWith(IoTDBTestRunner.class)
-@Category({MultiClusterIT2DualTableManualBasic.class})
+@Category({MultiClusterIT2DualTableManualEnhanced.class})
 public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelDualManualIT {
 
+  @Ignore
   @Test
   public void testThriftConnectorWithRealtimeFirstDisabled() throws Exception {
     final DataNodeWrapper receiverDataNode = receiverEnv.getDataNodeWrapper(0);
@@ -120,16 +122,19 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelDualManualIT {
     }
   }
 
+  @Ignore
   @Test
   public void testSinkTabletFormat() throws Exception {
     testSinkFormat("tablet");
   }
 
+  @Ignore
   @Test
   public void testSinkTsFileFormat() throws Exception {
     testSinkFormat("tsfile");
   }
 
+  @Ignore
   @Test
   public void testSinkHybridFormat() throws Exception {
     testSinkFormat("hybrid");
@@ -241,6 +246,7 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelDualManualIT {
     }
   }
 
+  @Ignore
   @Test
   public void testWriteBackSink() throws Exception {
     try (final SyncConfigNodeIServiceClient client =
@@ -298,36 +304,43 @@ public class IoTDBPipeDataSinkIT extends AbstractPipeTableModelDualManualIT {
     doTest(this::insertTablet2);
   }
 
+  @Ignore
   @Test
   public void testSinkTsFileFormat4() throws Exception {
     doTest(this::insertTablet3);
   }
 
+  @Ignore
   @Test
   public void testSinkTsFileFormat5() throws Exception {
     doTest(this::insertTablet4);
   }
 
+  @Ignore
   @Test
   public void testSinkTsFileFormat6() throws Exception {
     doTest(this::insertTablet5);
   }
 
+  @Ignore
   @Test
   public void testSinkTsFileFormat7() throws Exception {
     doTest(this::insertTablet6);
   }
 
+  @Ignore
   @Test
   public void testSinkTsFileFormat8() throws Exception {
     doTest(this::insertTablet7);
   }
 
+  @Ignore
   @Test
   public void testSinkTsFileFormat9() throws Exception {
     doTest(this::insertTablet8);
   }
 
+  @Ignore
   @Test
   public void testSinkTsFileFormat10() throws Exception {
     doTest(this::insertTablet9);

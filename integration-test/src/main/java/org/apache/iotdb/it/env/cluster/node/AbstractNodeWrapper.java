@@ -519,6 +519,8 @@ public abstract class AbstractNodeWrapper implements BaseNodeWrapper {
               "-Xmx" + jvmConfig.getMaxHeapSize() + "m",
               "-Duser.timezone=" + jvmConfig.getTimezone(),
               "-XX:MaxDirectMemorySize=" + jvmConfig.getMaxDirectMemorySize() + "m",
+              "-XX:+HeapDumpOnOutOfMemoryError",
+              "-XX:HeapDumpPath=~/heapdump.hprof",
               "-Djdk.nio.maxCachedBufferSize=262144",
               "-D" + IoTDBConstant.INTEGRATION_TEST_KILL_POINTS + "=" + killPoints.toString(),
               "-cp",
