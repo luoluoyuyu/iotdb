@@ -65,12 +65,7 @@ jobs:
         # we do not compile client-cpp for saving time, it is tested in client.yml
         # we can skip influxdb-protocol because it has been tested separately in influxdb-protocol.yml
         run: |
-          local -i max_attempts=100000
-          local -i attempt=1
-          local -i retry_sleep=5
-          local test_output
-          
-          while [ $attempt -le $max_attempts ]; do
+          while true; do
             mvn clean verify \
             -P with-integration-tests \
             -DskipUTs \
@@ -80,11 +75,7 @@ jobs:
             -am -PMultiClusterIT2DualTableManualEnhanced \
             -ntp
 
-            if [ $? -eq 0 ]; then
-              echo "Test succeeded on attempt $attempt."
-              attempt=$((attempt + 1))
-              echo "Proceeding to next attempt..."
-            else
+            if [ $? -eq 1 ]; then
               echo "Test failed on attempt $attempt."
               echo "Stopping the script due to failure."
               return 1
