@@ -58,7 +58,6 @@ import java.util.function.Consumer;
 
 import static org.junit.Assert.fail;
 
-@Ignore
 @RunWith(IoTDBTestRunner.class)
 @Category({MultiClusterIT2DualTableManualEnhanced.class})
 public class IoTDBPipeClusterIT extends AbstractPipeTableModelDualManualIT {
@@ -96,11 +95,13 @@ public class IoTDBPipeClusterIT extends AbstractPipeTableModelDualManualIT {
     receiverEnv.initClusterEnvironment(3, 3, 180);
   }
 
+  @Ignore
   @Test
   public void testMachineDowntimeAsync() {
     testMachineDowntime("iotdb-thrift-connector");
   }
 
+  @Ignore
   @Test
   public void testMachineDowntimeSync() {
     testMachineDowntime("iotdb-thrift-sync-connector");
@@ -159,11 +160,13 @@ public class IoTDBPipeClusterIT extends AbstractPipeTableModelDualManualIT {
     }
   }
 
+  @Ignore
   @Test
   public void testWithAllParametersInStreamingMode() throws Exception {
     testWithAllParameters("true");
   }
 
+  @Ignore
   @Test
   public void testWithAllParametersInNotStreamingMode() throws Exception {
     testWithAllParameters("false");
@@ -244,6 +247,7 @@ public class IoTDBPipeClusterIT extends AbstractPipeTableModelDualManualIT {
 
   // This function has a certain probability of triggering replica asynchrony. To ensure the success
   // of the test, it will be retried 5 times. The exception will be thrown after five retries.
+  @Ignore
   @Test
   public void testPipeAfterDataRegionLeaderStop() throws Exception {
     for (int retry = 0; retry < 5; retry++) {
@@ -590,6 +594,7 @@ public class IoTDBPipeClusterIT extends AbstractPipeTableModelDualManualIT {
     }
   }
 
+  @Ignore
   @Test
   public void testRegisteringNewDataNodeWhenTransferringData() throws Exception {
     final DataNodeWrapper receiverDataNode = receiverEnv.getDataNodeWrapper(0);
@@ -674,6 +679,7 @@ public class IoTDBPipeClusterIT extends AbstractPipeTableModelDualManualIT {
     }
   }
 
+  @Ignore
   @Test
   public void testRegisteringNewDataNodeAfterTransferringData() throws Exception {
     final DataNodeWrapper receiverDataNode = receiverEnv.getDataNodeWrapper(0);
@@ -742,6 +748,7 @@ public class IoTDBPipeClusterIT extends AbstractPipeTableModelDualManualIT {
     }
   }
 
+  @Ignore
   @Test
   public void testSenderRestartWhenTransferring() throws Exception {
     final DataNodeWrapper receiverDataNode = receiverEnv.getDataNodeWrapper(0);
@@ -808,6 +815,7 @@ public class IoTDBPipeClusterIT extends AbstractPipeTableModelDualManualIT {
     TableModelUtils.assertCountData("test", "test", succeedNum + 100, receiverEnv, handleFailure);
   }
 
+  @Ignore
   @Test
   public void testConcurrentlyCreatePipeOfSameName() throws Exception {
     final DataNodeWrapper receiverDataNode = receiverEnv.getDataNodeWrapper(0);
@@ -900,16 +908,19 @@ public class IoTDBPipeClusterIT extends AbstractPipeTableModelDualManualIT {
     }
   }
 
+  @Ignore
   @Test
   public void testCreate10PipesWithSameConnector() throws Exception {
     testCreatePipesWithSameConnector(10);
   }
 
+  @Ignore
   @Test
   public void testCreate50PipesWithSameConnector() throws Exception {
     testCreatePipesWithSameConnector(50);
   }
 
+  @Ignore
   @Test
   public void testCreate100PipesWithSameConnector() throws Exception {
     testCreatePipesWithSameConnector(100);
@@ -979,6 +990,7 @@ public class IoTDBPipeClusterIT extends AbstractPipeTableModelDualManualIT {
     }
   }
 
+  @Ignore
   @Test
   public void testNegativeTimestamp() throws Exception {
     final DataNodeWrapper receiverDataNode = receiverEnv.getDataNodeWrapper(0);
