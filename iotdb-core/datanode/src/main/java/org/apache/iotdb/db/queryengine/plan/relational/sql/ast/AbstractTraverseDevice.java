@@ -37,10 +37,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.apache.iotdb.db.queryengine.plan.relational.sql.ast.AbstractQueryDeviceWithCache.getDeviceColumnHeaderList;
 
 // TODO table metadata: reuse query distinct logic
+// Show, Count, Update, Delete Devices
 public abstract class AbstractTraverseDevice extends Statement {
 
   protected String database;
@@ -71,6 +73,9 @@ public abstract class AbstractTraverseDevice extends Statement {
   // to help reuse filter operator
   protected List<ColumnHeader> columnHeaderList;
 
+  // If there are no attribute columns, we can skip returning it to save time
+  private List<String> attributeColumns;
+
   // For sql-input show device usage
   protected AbstractTraverseDevice(
       final NodeLocation location, final Table table, final Expression where) {
@@ -99,8 +104,16 @@ public abstract class AbstractTraverseDevice extends Statement {
     return database;
   }
 
+  public void setDatabase(final String database) {
+    this.database = database;
+  }
+
   public String getTableName() {
     return tableName;
+  }
+
+  public void setTableName(final String tableName) {
+    this.tableName = tableName;
   }
 
   public Table getTable() {
@@ -136,6 +149,7 @@ public abstract class AbstractTraverseDevice extends Statement {
             entries,
             attributeColumns,
             context,
+            new AtomicBoolean(false),
             true);
   }
 
@@ -170,12 +184,16 @@ public abstract class AbstractTraverseDevice extends Statement {
     this.partitionKeyList = partitionKeyList;
   }
 
+  public void setAttributeColumns(final List<String> attributeColumns) {
+    this.attributeColumns = attributeColumns;
+  }
+
   public List<ColumnHeader> getColumnHeaderList() {
     return columnHeaderList;
   }
 
   public void setColumnHeaderList() {
-    this.columnHeaderList = getDeviceColumnHeaderList(database, tableName);
+    this.columnHeaderList = getDeviceColumnHeaderList(database, tableName, attributeColumns);
   }
 
   @Override

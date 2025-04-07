@@ -20,11 +20,14 @@
 package org.apache.iotdb.db.queryengine.plan.relational.metadata.fetcher.cache;
 
 import org.apache.iotdb.commons.exception.IllegalPathException;
+import org.apache.iotdb.commons.memory.IMemoryBlock;
+import org.apache.iotdb.commons.memory.MemoryBlockType;
 import org.apache.iotdb.commons.path.ExtendedPartialPath;
 import org.apache.iotdb.commons.path.PartialPath;
 import org.apache.iotdb.commons.path.PathPatternUtil;
 import org.apache.iotdb.commons.service.metric.MetricService;
 import org.apache.iotdb.commons.utils.PathUtils;
+import org.apache.iotdb.db.conf.DataNodeMemoryConfig;
 import org.apache.iotdb.db.conf.IoTDBConfig;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.queryengine.common.schematree.DeviceSchemaInfo;
@@ -84,6 +87,8 @@ import static org.apache.iotdb.commons.conf.IoTDBConstant.ONE_LEVEL_PATH_WILDCAR
 public class TableDeviceSchemaCache {
 
   private static final IoTDBConfig config = IoTDBDescriptor.getInstance().getConfig();
+  private static final DataNodeMemoryConfig memoryConfig =
+      IoTDBDescriptor.getInstance().getMemoryConfig();
   private static final Logger logger = LoggerFactory.getLogger(TableDeviceSchemaCache.class);
 
   /**
@@ -100,17 +105,23 @@ public class TableDeviceSchemaCache {
 
   private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock(false);
 
+  private final IMemoryBlock memoryBlock;
+
   private TableDeviceSchemaCache() {
+    memoryBlock =
+        memoryConfig
+            .getSchemaCacheMemoryManager()
+            .exactAllocate("TableDeviceSchemaCache", MemoryBlockType.STATIC);
     dualKeyCache =
         new DualKeyCacheBuilder<TableId, IDeviceID, TableDeviceCacheEntry>()
             .cacheEvictionPolicy(
                 DualKeyCachePolicy.valueOf(config.getDataNodeSchemaCacheEvictionPolicy()))
-            .memoryCapacity(config.getAllocateMemoryForSchemaCache())
+            .memoryCapacity(memoryBlock.getTotalMemorySizeInBytes())
             .firstKeySizeComputer(TableId::estimateSize)
             .secondKeySizeComputer(deviceID -> (int) deviceID.ramBytesUsed())
             .valueSizeComputer(TableDeviceCacheEntry::estimateSize)
             .build();
-
+    memoryBlock.allocate(memoryBlock.getTotalMemorySizeInBytes());
     MetricService.getInstance().addMetricSet(new TableDeviceSchemaCacheMetrics(this));
   }
 
@@ -126,14 +137,9 @@ public class TableDeviceSchemaCache {
 
   // The input deviceId shall have its tailing nulls trimmed
   public Map<String, Binary> getDeviceAttribute(final String database, final IDeviceID deviceId) {
-    readWriteLock.readLock().lock();
-    try {
-      final TableDeviceCacheEntry entry =
-          dualKeyCache.get(new TableId(database, deviceId.getTableName()), deviceId);
-      return entry == null ? null : entry.getAttributeMap();
-    } finally {
-      readWriteLock.readLock().unlock();
-    }
+    final TableDeviceCacheEntry entry =
+        dualKeyCache.get(new TableId(database, deviceId.getTableName()), deviceId);
+    return entry == null ? null : entry.getAttributeMap();
   }
 
   // The input deviceId shall have its tailing nulls trimmed
@@ -246,7 +252,7 @@ public class TableDeviceSchemaCache {
 
   /**
    * Update the last cache in writing or the second push of last cache query. If a measurement is
-   * with all {@code null}s or is an id/attribute column, its {@link TimeValuePair}[] shall be
+   * with all {@code null}s or is a tag/attribute column, its {@link TimeValuePair}[] shall be
    * {@code null}. For correctness, this will put the cache lazily and only update the existing last
    * caches of measurements.
    *
@@ -282,6 +288,25 @@ public class TableDeviceSchemaCache {
     final TableDeviceCacheEntry entry =
         dualKeyCache.get(new TableId(database, deviceId.getTableName()), deviceId);
     return Objects.nonNull(entry) ? entry.getTimeValuePair(measurement) : null;
+  }
+
+  /**
+   * Get the last {@link TimeValuePair}s of given measurements, the measurements shall never be
+   * "time".
+   *
+   * @param database the device's database, without "root", {@code null} for tree model
+   * @param deviceId {@link IDeviceID}
+   * @param measurements the measurements to get
+   * @return {@code null} iff cache miss, {@link TableDeviceLastCache#EMPTY_TIME_VALUE_PAIR} iff
+   *     cache hit but result is {@code null}, and the result value otherwise.
+   */
+  public TimeValuePair[] getLastEntries(
+      final @Nullable String database, final IDeviceID deviceId, final String[] measurements) {
+    final TableDeviceCacheEntry entry =
+        dualKeyCache.get(new TableId(database, deviceId.getTableName()), deviceId);
+    return Objects.nonNull(entry)
+        ? Arrays.stream(measurements).map(entry::getTimeValuePair).toArray(TimeValuePair[]::new)
+        : null;
   }
 
   /**
@@ -489,46 +514,63 @@ public class TableDeviceSchemaCache {
     return dualKeyCache.stats().requestCount();
   }
 
-  // This database is with "root"
-  void invalidateLastCache(final @Nonnull String qualifiedDatabase) {
-    final String database = PathUtils.unQualifyDatabaseName(qualifiedDatabase);
+  long getMemoryUsage() {
+    return dualKeyCache.stats().memoryUsage();
+  }
+
+  long capacity() {
+    return dualKeyCache.stats().capacity();
+  }
+
+  long entriesCount() {
+    return dualKeyCache.stats().entriesCount();
+  }
+
+  void invalidateLastCache(final @Nonnull String database) {
     readWriteLock.writeLock().lock();
 
     try {
-      dualKeyCache.update(
-          tableId ->
-              tableId.belongTo(database)
-                  || Objects.isNull(tableId.getDatabase())
-                      && tableId.getTableName().startsWith(qualifiedDatabase),
-          deviceID -> true,
-          entry -> -entry.invalidateLastCache());
-      dualKeyCache.update(
-          tableId ->
-              Objects.isNull(tableId.getDatabase())
-                  && qualifiedDatabase.startsWith(tableId.getTableName()),
-          deviceID -> deviceID.matchDatabaseName(qualifiedDatabase),
-          entry -> -entry.invalidateLastCache());
+      if (PathUtils.isTableModelDatabase(database)) {
+        dualKeyCache.update(
+            tableId -> tableId.belongTo(database),
+            deviceID -> true,
+            entry -> -entry.invalidateLastCache());
+      } else {
+        dualKeyCache.update(
+            tableId ->
+                Objects.isNull(tableId.getDatabase())
+                    && tableId.getTableName().startsWith(database),
+            deviceID -> true,
+            entry -> -entry.invalidateLastCache());
+        dualKeyCache.update(
+            tableId ->
+                Objects.isNull(tableId.getDatabase())
+                    && database.startsWith(tableId.getTableName()),
+            deviceID -> deviceID.matchDatabaseName(database),
+            entry -> -entry.invalidateLastCache());
+      }
     } finally {
       readWriteLock.writeLock().unlock();
     }
   }
 
-  // This database is without "root"
   public void invalidate(final @Nonnull String database) {
-    final String qualifiedDatabase = PathUtils.qualifyDatabaseName(database);
     readWriteLock.writeLock().lock();
     try {
-      dualKeyCache.invalidate(
-          tableId ->
-              tableId.belongTo(database)
-                  || Objects.isNull(tableId.getDatabase())
-                      && tableId.getTableName().startsWith(qualifiedDatabase),
-          deviceID -> true);
-      dualKeyCache.invalidate(
-          tableId ->
-              Objects.isNull(tableId.getDatabase())
-                  && qualifiedDatabase.startsWith(tableId.getTableName()),
-          deviceID -> deviceID.matchDatabaseName(qualifiedDatabase));
+      if (PathUtils.isTableModelDatabase(database)) {
+        dualKeyCache.invalidate(tableId -> tableId.belongTo(database), deviceID -> true);
+      } else {
+        dualKeyCache.invalidate(
+            tableId ->
+                Objects.isNull(tableId.getDatabase())
+                    && tableId.getTableName().startsWith(database),
+            deviceID -> true);
+        dualKeyCache.invalidate(
+            tableId ->
+                Objects.isNull(tableId.getDatabase())
+                    && database.startsWith(tableId.getTableName()),
+            deviceID -> deviceID.matchDatabaseName(database));
+      }
     } finally {
       readWriteLock.writeLock().unlock();
     }
@@ -607,8 +649,8 @@ public class TableDeviceSchemaCache {
       DataNodeTableCache.getInstance().invalid(database, tableName, columnName);
       final ToIntFunction<TableDeviceCacheEntry> updateFunction =
           isAttributeColumn
-              ? entry -> entry.invalidateAttributeColumn(columnName)
-              : entry -> entry.invalidateLastCache(columnName, true);
+              ? entry -> -entry.invalidateAttributeColumn(columnName)
+              : entry -> -entry.invalidateLastCache(columnName, true);
       dualKeyCache.update(new TableId(null, tableName), deviceID -> true, updateFunction);
     } finally {
       readWriteLock.writeLock().unlock();
@@ -644,6 +686,11 @@ public class TableDeviceSchemaCache {
   }
 
   public void invalidateAll() {
-    dualKeyCache.invalidateAll();
+    readWriteLock.writeLock().lock();
+    try {
+      dualKeyCache.invalidateAll();
+    } finally {
+      readWriteLock.writeLock().unlock();
+    }
   }
 }

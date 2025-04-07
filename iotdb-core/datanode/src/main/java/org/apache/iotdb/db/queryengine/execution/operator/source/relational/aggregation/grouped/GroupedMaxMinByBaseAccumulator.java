@@ -19,6 +19,7 @@
 
 package org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.grouped;
 
+import org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.AggregationMask;
 import org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.grouped.array.BinaryBigArray;
 import org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.grouped.array.BooleanBigArray;
 import org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.grouped.array.DoubleBigArray;
@@ -103,7 +104,7 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
         break;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type : %s", xDataType));
+            String.format("Unsupported data type in MAX_BY/MIN_BY Aggregation: %s", xDataType));
     }
 
     switch (yDataType) {
@@ -131,7 +132,7 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
         break;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type : %s", yDataType));
+            String.format("Unsupported data type in MAX_BY/MIN_BY Aggregation: %s", yDataType));
     }
   }
 
@@ -163,7 +164,7 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
         break;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type in : %s", xDataType));
+            String.format("Unsupported data type in MAX_BY/MIN_BY Aggregation: %s", xDataType));
     }
 
     switch (yDataType) {
@@ -191,7 +192,7 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
         break;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type in : %s", xDataType));
+            String.format("Unsupported data type in MAX_BY/MIN_BY Aggregation: %s", xDataType));
     }
 
     return INSTANCE_SIZE + valuesSize + inits.sizeOf() + xNulls.sizeOf();
@@ -226,7 +227,7 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
         break;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type in : %s", xDataType));
+            String.format("Unsupported data type in MAX_BY/MIN_BY Aggregation: %s", xDataType));
     }
     switch (yDataType) {
       case INT32:
@@ -253,7 +254,7 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
         break;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type in : %s", xDataType));
+            String.format("Unsupported data type in MAX_BY/MIN_BY Aggregation: %s", xDataType));
     }
   }
 
@@ -289,7 +290,7 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
         break;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type : %s", xDataType));
+            String.format("Unsupported data type in MAX_BY/MIN_BY Aggregation: %s", xDataType));
     }
 
     switch (yDataType) {
@@ -317,38 +318,38 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
         break;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type : %s", yDataType));
+            String.format("Unsupported data type in MAX_BY/MIN_BY Aggregation: %s", yDataType));
     }
   }
 
   @Override
-  public void addInput(int[] groupIds, Column[] arguments) {
+  public void addInput(int[] groupIds, Column[] arguments, AggregationMask mask) {
     switch (yDataType) {
       case INT32:
       case DATE:
-        addIntInput(groupIds, arguments);
+        addIntInput(groupIds, arguments, mask);
         return;
       case INT64:
       case TIMESTAMP:
-        addLongInput(groupIds, arguments);
+        addLongInput(groupIds, arguments, mask);
         return;
       case FLOAT:
-        addFloatInput(groupIds, arguments);
+        addFloatInput(groupIds, arguments, mask);
         return;
       case DOUBLE:
-        addDoubleInput(groupIds, arguments);
+        addDoubleInput(groupIds, arguments, mask);
         return;
       case TEXT:
       case BLOB:
       case STRING:
-        addBinaryInput(groupIds, arguments);
+        addBinaryInput(groupIds, arguments, mask);
         return;
       case BOOLEAN:
-        addBooleanInput(groupIds, arguments);
+        addBooleanInput(groupIds, arguments, mask);
         return;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type : %s", yDataType));
+            String.format("Unsupported data type in MAX_BY/MIN_BY Aggregation: %s", yDataType));
     }
   }
 
@@ -358,7 +359,7 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
         argument instanceof BinaryColumn
             || (argument instanceof RunLengthEncodedColumn
                 && ((RunLengthEncodedColumn) argument).getValue() instanceof BinaryColumn),
-        "intermediate input and output of MaxBy or MinBy should be BinaryColumn");
+        "intermediate input and output of MAX_BY/MIN_BY should be BinaryColumn");
 
     for (int i = 0; i < groupIds.length; i++) {
       if (argument.isNull(i)) {
@@ -374,7 +375,7 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
   public void evaluateIntermediate(int groupId, ColumnBuilder columnBuilder) {
     checkArgument(
         columnBuilder instanceof BinaryColumnBuilder,
-        "intermediate input and output of Mode should be BinaryColumn");
+        "intermediate input and output of MAX_BY/MIN_BY should be BinaryColumn");
 
     if (!inits.get(groupId)) {
       columnBuilder.appendNull();
@@ -392,10 +393,24 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
     writeX(groupId, columnBuilder);
   }
 
-  private void addIntInput(int[] groupIds, Column[] arguments) {
-    for (int i = 0; i < groupIds.length; i++) {
-      if (!arguments[1].isNull(i)) {
-        updateIntResult(groupIds[i], arguments[1].getInt(i), arguments[0], i);
+  private void addIntInput(int[] groupIds, Column[] arguments, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < positionCount; i++) {
+        if (!arguments[1].isNull(i)) {
+          updateIntResult(groupIds[i], arguments[1].getInt(i), arguments[0], i);
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!arguments[1].isNull(position)) {
+          updateIntResult(
+              groupIds[position], arguments[1].getInt(position), arguments[0], position);
+        }
       }
     }
   }
@@ -408,10 +423,24 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
     }
   }
 
-  private void addLongInput(int[] groupIds, Column[] arguments) {
-    for (int i = 0; i < groupIds.length; i++) {
-      if (!arguments[1].isNull(i)) {
-        updateLongResult(groupIds[i], arguments[1].getLong(i), arguments[0], i);
+  private void addLongInput(int[] groupIds, Column[] arguments, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < positionCount; i++) {
+        if (!arguments[1].isNull(i)) {
+          updateLongResult(groupIds[i], arguments[1].getLong(i), arguments[0], i);
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!arguments[1].isNull(position)) {
+          updateLongResult(
+              groupIds[position], arguments[1].getLong(position), arguments[0], position);
+        }
       }
     }
   }
@@ -424,10 +453,24 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
     }
   }
 
-  private void addFloatInput(int[] groupIds, Column[] arguments) {
-    for (int i = 0; i < groupIds.length; i++) {
-      if (!arguments[1].isNull(i)) {
-        updateFloatResult(groupIds[i], arguments[1].getFloat(i), arguments[0], i);
+  private void addFloatInput(int[] groupIds, Column[] arguments, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < positionCount; i++) {
+        if (!arguments[1].isNull(i)) {
+          updateFloatResult(groupIds[i], arguments[1].getFloat(i), arguments[0], i);
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!arguments[1].isNull(position)) {
+          updateFloatResult(
+              groupIds[position], arguments[1].getFloat(position), arguments[0], position);
+        }
       }
     }
   }
@@ -440,10 +483,24 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
     }
   }
 
-  private void addDoubleInput(int[] groupIds, Column[] arguments) {
-    for (int i = 0; i < groupIds.length; i++) {
-      if (!arguments[1].isNull(i)) {
-        updateDoubleResult(groupIds[i], arguments[1].getDouble(i), arguments[0], i);
+  private void addDoubleInput(int[] groupIds, Column[] arguments, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < positionCount; i++) {
+        if (!arguments[1].isNull(i)) {
+          updateDoubleResult(groupIds[i], arguments[1].getDouble(i), arguments[0], i);
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!arguments[1].isNull(position)) {
+          updateDoubleResult(
+              groupIds[position], arguments[1].getDouble(position), arguments[0], position);
+        }
       }
     }
   }
@@ -456,10 +513,24 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
     }
   }
 
-  private void addBinaryInput(int[] groupIds, Column[] arguments) {
-    for (int i = 0; i < groupIds.length; i++) {
-      if (!arguments[1].isNull(i)) {
-        updateBinaryResult(groupIds[i], arguments[1].getBinary(i), arguments[0], i);
+  private void addBinaryInput(int[] groupIds, Column[] arguments, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < positionCount; i++) {
+        if (!arguments[1].isNull(i)) {
+          updateBinaryResult(groupIds[i], arguments[1].getBinary(i), arguments[0], i);
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!arguments[1].isNull(position)) {
+          updateBinaryResult(
+              groupIds[position], arguments[1].getBinary(position), arguments[0], position);
+        }
       }
     }
   }
@@ -472,10 +543,24 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
     }
   }
 
-  private void addBooleanInput(int[] groupIds, Column[] arguments) {
-    for (int i = 0; i < groupIds.length; i++) {
-      if (!arguments[1].isNull(i)) {
-        updateBooleanResult(groupIds[i], arguments[1].getBoolean(i), arguments[0], i);
+  private void addBooleanInput(int[] groupIds, Column[] arguments, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < positionCount; i++) {
+        if (!arguments[1].isNull(i)) {
+          updateBooleanResult(groupIds[i], arguments[1].getBoolean(i), arguments[0], i);
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!arguments[1].isNull(position)) {
+          updateBooleanResult(
+              groupIds[position], arguments[1].getBoolean(position), arguments[0], position);
+        }
       }
     }
   }
@@ -518,7 +603,7 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
         break;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type : %s", xDataType));
+            String.format("Unsupported data type in MAX_BY/MIN_BY Aggregation: %s", xDataType));
     }
   }
 
@@ -551,7 +636,7 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
           xBooleanValues.set(groupId, xColumn.getBoolean(xIndex));
         default:
           throw new UnSupportedDataTypeException(
-              String.format("Unsupported data type : %s", xDataType));
+              String.format("Unsupported data type in MAX_BY/MIN_BY Aggregation: %s", xDataType));
       }
     }
   }
@@ -622,7 +707,7 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
 
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type : %s", dataType));
+            String.format("Unsupported data type in MAX_BY/MIN_BY Aggregation: %s", dataType));
     }
   }
 
@@ -649,7 +734,7 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
         return 1;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type: %s", dataType));
+            String.format("Unsupported data type in MAX_BY/MIN_BY Aggregation: %s", dataType));
     }
   }
 
@@ -704,7 +789,7 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
         break;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type : %s", yDataType));
+            String.format("Unsupported data type in MAX_BY/MIN_BY Aggregation: %s", yDataType));
     }
   }
 
@@ -742,7 +827,7 @@ public abstract class GroupedMaxMinByBaseAccumulator implements GroupedAccumulat
           break;
         default:
           throw new UnSupportedDataTypeException(
-              String.format("Unsupported data type : %s", xDataType));
+              String.format("Unsupported data type in MAX_BY/MIN_BY Aggregation: %s", xDataType));
       }
     }
   }

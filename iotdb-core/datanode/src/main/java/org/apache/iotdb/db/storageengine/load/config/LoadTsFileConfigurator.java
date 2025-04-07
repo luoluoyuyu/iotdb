@@ -44,10 +44,17 @@ public class LoadTsFileConfigurator {
       case ON_SUCCESS_KEY:
         validateOnSuccessParam(value);
         break;
-      case MODEL_KEY:
-        validateModelParam(value);
-        break;
       case DATABASE_NAME_KEY:
+      case TABLET_CONVERSION_THRESHOLD_KEY:
+        break;
+      case CONVERT_ON_TYPE_MISMATCH_KEY:
+        validateConvertOnTypeMismatchParam(value);
+        break;
+      case VERIFY_KEY:
+        validateVerifyParam(value);
+        break;
+      case ASYNC_LOAD_KEY:
+        validateAsyncLoadParam(value);
         break;
       default:
         throw new SemanticException("Invalid parameter '" + key + "' for LOAD TSFILE command.");
@@ -90,8 +97,8 @@ public class LoadTsFileConfigurator {
   }
 
   public static final String ON_SUCCESS_KEY = "on-success";
-  private static final String ON_SUCCESS_DELETE_VALUE = "delete";
-  private static final String ON_SUCCESS_NONE_VALUE = "none";
+  public static final String ON_SUCCESS_DELETE_VALUE = "delete";
+  public static final String ON_SUCCESS_NONE_VALUE = "none";
   private static final Set<String> ON_SUCCESS_VALUE_SET =
       Collections.unmodifiableSet(
           new HashSet<>(Arrays.asList(ON_SUCCESS_DELETE_VALUE, ON_SUCCESS_NONE_VALUE)));
@@ -107,28 +114,74 @@ public class LoadTsFileConfigurator {
 
   public static boolean parseOrGetDefaultOnSuccess(final Map<String, String> loadAttributes) {
     final String value = loadAttributes.get(ON_SUCCESS_KEY);
-    return StringUtils.isEmpty(value) || ON_SUCCESS_DELETE_VALUE.equals(value);
+    return !StringUtils.isEmpty(value) && ON_SUCCESS_DELETE_VALUE.equalsIgnoreCase(value);
   }
 
-  public static final String MODEL_KEY = "model";
-  public static final String MODEL_TREE_VALUE = "tree";
-  public static final String MODEL_TABLE_VALUE = "table";
-  public static final Set<String> MODEL_VALUE_SET =
-      Collections.unmodifiableSet(
-          new HashSet<>(Arrays.asList(MODEL_TREE_VALUE, MODEL_TABLE_VALUE)));
+  public static final String CONVERT_ON_TYPE_MISMATCH_KEY = "convert-on-type-mismatch";
+  private static final boolean CONVERT_ON_TYPE_MISMATCH_DEFAULT_VALUE = true;
 
-  public static void validateModelParam(final String model) {
-    if (!MODEL_VALUE_SET.contains(model)) {
+  public static void validateConvertOnTypeMismatchParam(final String convertOnTypeMismatch) {
+    if (!"true".equalsIgnoreCase(convertOnTypeMismatch)
+        && !"false".equalsIgnoreCase(convertOnTypeMismatch)) {
       throw new SemanticException(
           String.format(
-              "Given %s value '%s' is not supported, please input a valid value.",
-              MODEL_KEY, model));
+              "Given %s value '%s' is not supported, please input a valid boolean value.",
+              CONVERT_ON_TYPE_MISMATCH_KEY, convertOnTypeMismatch));
     }
   }
 
-  public static @Nullable String parseOrGetDefaultModel(
-      final Map<String, String> loadAttributes, final String defaultModel) {
-    return loadAttributes.getOrDefault(MODEL_KEY, defaultModel);
+  public static boolean parseOrGetDefaultConvertOnTypeMismatch(
+      final Map<String, String> loadAttributes) {
+    return Boolean.parseBoolean(
+        loadAttributes.getOrDefault(
+            CONVERT_ON_TYPE_MISMATCH_KEY, String.valueOf(CONVERT_ON_TYPE_MISMATCH_DEFAULT_VALUE)));
+  }
+
+  public static final String TABLET_CONVERSION_THRESHOLD_KEY = "tablet-conversion-threshold";
+
+  public static long parseOrGetDefaultTabletConversionThresholdBytes(
+      final Map<String, String> loadAttributes) {
+    return Long.parseLong(
+        loadAttributes.getOrDefault(
+            TABLET_CONVERSION_THRESHOLD_KEY,
+            String.valueOf(
+                IoTDBDescriptor.getInstance()
+                    .getConfig()
+                    .getLoadTabletConversionThresholdBytes())));
+  }
+
+  public static final String VERIFY_KEY = "verify";
+  private static final boolean VERIFY_DEFAULT_VALUE = true;
+
+  public static void validateVerifyParam(final String verify) {
+    if (!"true".equalsIgnoreCase(verify) && !"false".equalsIgnoreCase(verify)) {
+      throw new SemanticException(
+          String.format(
+              "Given %s value '%s' is not supported, please input a valid boolean value.",
+              VERIFY_KEY, verify));
+    }
+  }
+
+  public static boolean parseOrGetDefaultVerify(final Map<String, String> loadAttributes) {
+    return Boolean.parseBoolean(
+        loadAttributes.getOrDefault(VERIFY_KEY, String.valueOf(VERIFY_DEFAULT_VALUE)));
+  }
+
+  public static final String ASYNC_LOAD_KEY = "async";
+  private static final boolean ASYNC_LOAD_DEFAULT_VALUE = false;
+
+  public static void validateAsyncLoadParam(final String asyncLoad) {
+    if (!"true".equalsIgnoreCase(asyncLoad) && !"false".equalsIgnoreCase(asyncLoad)) {
+      throw new SemanticException(
+          String.format(
+              "Given %s value '%s' is not supported, please input a valid boolean value.",
+              ASYNC_LOAD_KEY, asyncLoad));
+    }
+  }
+
+  public static boolean parseOrGetDefaultAsyncLoad(final Map<String, String> loadAttributes) {
+    return Boolean.parseBoolean(
+        loadAttributes.getOrDefault(ASYNC_LOAD_KEY, String.valueOf(ASYNC_LOAD_DEFAULT_VALUE)));
   }
 
   private LoadTsFileConfigurator() {

@@ -19,6 +19,7 @@
 
 package org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.grouped;
 
+import org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.AggregationMask;
 import org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.grouped.array.BinaryBigArray;
 import org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.grouped.array.BooleanBigArray;
 import org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.grouped.array.DoubleBigArray;
@@ -94,7 +95,7 @@ public class GroupedLastByAccumulator implements GroupedAccumulator {
         break;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type : %s", xDataType));
+            String.format("Unsupported data type in LAST_BY Aggregation: %s", xDataType));
     }
   }
 
@@ -126,7 +127,7 @@ public class GroupedLastByAccumulator implements GroupedAccumulator {
         break;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type in : %s", xDataType));
+            String.format("Unsupported data type in LAST_BY Aggregation: %s", xDataType));
     }
 
     return INSTANCE_SIZE + valuesSize + yLastTimes.sizeOf() + inits.sizeOf() + xNulls.sizeOf();
@@ -162,7 +163,7 @@ public class GroupedLastByAccumulator implements GroupedAccumulator {
         return;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type in : %s", xDataType));
+            String.format("Unsupported data type in LAST_BY Aggregation: %s", xDataType));
     }
   }
 
@@ -199,41 +200,41 @@ public class GroupedLastByAccumulator implements GroupedAccumulator {
         break;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type : %s", xDataType));
+            String.format("Unsupported data type in LAST_BY Aggregation: %s", xDataType));
     }
   }
 
   @Override
-  public void addInput(int[] groupIds, Column[] arguments) {
-    checkArgument(arguments.length == 3, "Length of input Column[] for LastBy/LastBy should be 3");
+  public void addInput(int[] groupIds, Column[] arguments, AggregationMask mask) {
+    checkArgument(arguments.length == 3, "Length of input Column[] for LAST_BY should be 3");
 
     // arguments[0] is x column, arguments[1] is y column, arguments[2] is time column
     switch (xDataType) {
       case INT32:
       case DATE:
-        addIntInput(groupIds, arguments[0], arguments[1], arguments[2]);
+        addIntInput(groupIds, arguments[0], arguments[1], arguments[2], mask);
         return;
       case INT64:
       case TIMESTAMP:
-        addLongInput(groupIds, arguments[0], arguments[1], arguments[2]);
+        addLongInput(groupIds, arguments[0], arguments[1], arguments[2], mask);
         return;
       case FLOAT:
-        addFloatInput(groupIds, arguments[0], arguments[1], arguments[2]);
+        addFloatInput(groupIds, arguments[0], arguments[1], arguments[2], mask);
         return;
       case DOUBLE:
-        addDoubleInput(groupIds, arguments[0], arguments[1], arguments[2]);
+        addDoubleInput(groupIds, arguments[0], arguments[1], arguments[2], mask);
         return;
       case TEXT:
       case STRING:
       case BLOB:
-        addBinaryInput(groupIds, arguments[0], arguments[1], arguments[2]);
+        addBinaryInput(groupIds, arguments[0], arguments[1], arguments[2], mask);
         return;
       case BOOLEAN:
-        addBooleanInput(groupIds, arguments[0], arguments[1], arguments[2]);
+        addBooleanInput(groupIds, arguments[0], arguments[1], arguments[2], mask);
         return;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type in LastBy: %s", yDataType));
+            String.format("Unsupported data type in LAST_BY Aggregation: %s", yDataType));
     }
   }
 
@@ -243,7 +244,7 @@ public class GroupedLastByAccumulator implements GroupedAccumulator {
         argument instanceof BinaryColumn
             || (argument instanceof RunLengthEncodedColumn
                 && ((RunLengthEncodedColumn) argument).getValue() instanceof BinaryColumn),
-        "intermediate input and output of LastBy should be BinaryColumn");
+        "intermediate input and output of LAST_BY should be BinaryColumn");
 
     for (int i = 0; i < argument.getPositionCount(); i++) {
       if (argument.isNull(i)) {
@@ -299,7 +300,7 @@ public class GroupedLastByAccumulator implements GroupedAccumulator {
           break;
         default:
           throw new UnSupportedDataTypeException(
-              String.format("Unsupported data type in Last Aggregation: %s", yDataType));
+              String.format("Unsupported data type in LAST_BY Aggregation: %s", yDataType));
       }
     }
   }
@@ -308,7 +309,7 @@ public class GroupedLastByAccumulator implements GroupedAccumulator {
   public void evaluateIntermediate(int groupId, ColumnBuilder columnBuilder) {
     checkArgument(
         columnBuilder instanceof BinaryColumnBuilder,
-        "intermediate input and output of LastBy should be BinaryColumn");
+        "intermediate input and output of LAST_BY should be BinaryColumn");
 
     if (!inits.get(groupId)) {
       columnBuilder.appendNull();
@@ -352,7 +353,7 @@ public class GroupedLastByAccumulator implements GroupedAccumulator {
           return bytes;
         default:
           throw new UnSupportedDataTypeException(
-              String.format("Unsupported data type: %s", yDataType));
+              String.format("Unsupported data type in LAST_BY Aggregation: %s", yDataType));
       }
     }
     return bytes;
@@ -378,7 +379,7 @@ public class GroupedLastByAccumulator implements GroupedAccumulator {
         return 1;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type: %s", xDataType));
+            String.format("Unsupported data type in LAST_BY Aggregation: %s", xDataType));
     }
   }
 
@@ -414,14 +415,28 @@ public class GroupedLastByAccumulator implements GroupedAccumulator {
         break;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type in LastBy: %s", xDataType));
+            String.format("Unsupported data type in LAST_BY Aggregation: %s", xDataType));
     }
   }
 
-  private void addIntInput(int[] groupIds, Column xColumn, Column yColumn, Column timeColumn) {
-    for (int i = 0; i < groupIds.length; i++) {
-      if (!yColumn.isNull(i)) {
-        updateIntLastValue(groupIds[i], xColumn, i, timeColumn.getLong(i));
+  private void addIntInput(
+      int[] groupIds, Column xColumn, Column yColumn, Column timeColumn, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < positionCount; i++) {
+        if (!yColumn.isNull(i)) {
+          updateIntLastValue(groupIds[i], xColumn, i, timeColumn.getLong(i));
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!yColumn.isNull(position)) {
+          updateIntLastValue(groupIds[position], xColumn, position, timeColumn.getLong(position));
+        }
       }
     }
   }
@@ -448,10 +463,24 @@ public class GroupedLastByAccumulator implements GroupedAccumulator {
     }
   }
 
-  private void addLongInput(int[] groupIds, Column xColumn, Column yColumn, Column timeColumn) {
-    for (int i = 0; i < yColumn.getPositionCount(); i++) {
-      if (!yColumn.isNull(i)) {
-        updateLongLastValue(groupIds[i], xColumn, i, timeColumn.getLong(i));
+  private void addLongInput(
+      int[] groupIds, Column xColumn, Column yColumn, Column timeColumn, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < positionCount; i++) {
+        if (!yColumn.isNull(i)) {
+          updateLongLastValue(groupIds[i], xColumn, i, timeColumn.getLong(i));
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!yColumn.isNull(position)) {
+          updateLongLastValue(groupIds[position], xColumn, position, timeColumn.getLong(position));
+        }
       }
     }
   }
@@ -478,10 +507,24 @@ public class GroupedLastByAccumulator implements GroupedAccumulator {
     }
   }
 
-  private void addFloatInput(int[] groupIds, Column xColumn, Column yColumn, Column timeColumn) {
-    for (int i = 0; i < yColumn.getPositionCount(); i++) {
-      if (!yColumn.isNull(i)) {
-        updateFloatLastValue(groupIds[i], xColumn, i, timeColumn.getLong(i));
+  private void addFloatInput(
+      int[] groupIds, Column xColumn, Column yColumn, Column timeColumn, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < positionCount; i++) {
+        if (!yColumn.isNull(i)) {
+          updateFloatLastValue(groupIds[i], xColumn, i, timeColumn.getLong(i));
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!yColumn.isNull(position)) {
+          updateFloatLastValue(groupIds[position], xColumn, position, timeColumn.getLong(position));
+        }
       }
     }
   }
@@ -508,10 +551,25 @@ public class GroupedLastByAccumulator implements GroupedAccumulator {
     }
   }
 
-  private void addDoubleInput(int[] groupIds, Column xColumn, Column yColumn, Column timeColumn) {
-    for (int i = 0; i < yColumn.getPositionCount(); i++) {
-      if (!yColumn.isNull(i)) {
-        updateDoubleLastValue(groupIds[i], xColumn, i, timeColumn.getLong(i));
+  private void addDoubleInput(
+      int[] groupIds, Column xColumn, Column yColumn, Column timeColumn, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < positionCount; i++) {
+        if (!yColumn.isNull(i)) {
+          updateDoubleLastValue(groupIds[i], xColumn, i, timeColumn.getLong(i));
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!yColumn.isNull(position)) {
+          updateDoubleLastValue(
+              groupIds[position], xColumn, position, timeColumn.getLong(position));
+        }
       }
     }
   }
@@ -538,10 +596,25 @@ public class GroupedLastByAccumulator implements GroupedAccumulator {
     }
   }
 
-  private void addBinaryInput(int[] groupIds, Column xColumn, Column yColumn, Column timeColumn) {
-    for (int i = 0; i < yColumn.getPositionCount(); i++) {
-      if (!yColumn.isNull(i)) {
-        updateBinaryLastValue(groupIds[i], xColumn, i, timeColumn.getLong(i));
+  private void addBinaryInput(
+      int[] groupIds, Column xColumn, Column yColumn, Column timeColumn, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < positionCount; i++) {
+        if (!yColumn.isNull(i)) {
+          updateBinaryLastValue(groupIds[i], xColumn, i, timeColumn.getLong(i));
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!yColumn.isNull(position)) {
+          updateBinaryLastValue(
+              groupIds[position], xColumn, position, timeColumn.getLong(position));
+        }
       }
     }
   }
@@ -554,7 +627,7 @@ public class GroupedLastByAccumulator implements GroupedAccumulator {
         xNulls.set(groupId, true);
       } else {
         xNulls.set(groupId, false);
-        xIntValues.set(groupId, xColumn.getInt(xIdx));
+        xBinaryValues.set(groupId, xColumn.getBinary(xIdx));
       }
     }
   }
@@ -568,10 +641,25 @@ public class GroupedLastByAccumulator implements GroupedAccumulator {
     }
   }
 
-  private void addBooleanInput(int[] groupIds, Column xColumn, Column yColumn, Column timeColumn) {
-    for (int i = 0; i < yColumn.getPositionCount(); i++) {
-      if (!yColumn.isNull(i)) {
-        updateBooleanLastValue(groupIds[i], xColumn, i, timeColumn.getLong(i));
+  private void addBooleanInput(
+      int[] groupIds, Column xColumn, Column yColumn, Column timeColumn, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < positionCount; i++) {
+        if (!yColumn.isNull(i)) {
+          updateBooleanLastValue(groupIds[i], xColumn, i, timeColumn.getLong(i));
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!yColumn.isNull(position)) {
+          updateBooleanLastValue(
+              groupIds[position], xColumn, position, timeColumn.getLong(position));
+        }
       }
     }
   }

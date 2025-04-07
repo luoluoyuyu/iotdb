@@ -20,9 +20,11 @@
 package org.apache.iotdb.db.storageengine.buffer;
 
 import org.apache.iotdb.commons.exception.IoTDBIORuntimeException;
+import org.apache.iotdb.commons.memory.IMemoryBlock;
+import org.apache.iotdb.commons.memory.MemoryBlockType;
 import org.apache.iotdb.commons.service.metric.MetricService;
 import org.apache.iotdb.commons.utils.TestOnly;
-import org.apache.iotdb.db.conf.IoTDBConfig;
+import org.apache.iotdb.db.conf.DataNodeMemoryConfig;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.queryengine.execution.fragment.QueryContext;
 import org.apache.iotdb.db.queryengine.metric.ChunkCacheMetrics;
@@ -59,10 +61,10 @@ public class ChunkCache {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ChunkCache.class);
   private static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("QUERY_DEBUG");
-  private static final IoTDBConfig CONFIG = IoTDBDescriptor.getInstance().getConfig();
-  private static final long MEMORY_THRESHOLD_IN_CHUNK_CACHE =
-      CONFIG.getAllocateMemoryForChunkCache();
-  private static final boolean CACHE_ENABLE = CONFIG.isMetaDataCacheEnable();
+  private static final DataNodeMemoryConfig MEMORY_CONFIG =
+      IoTDBDescriptor.getInstance().getMemoryConfig();
+  private static final IMemoryBlock CACHE_MEMORY_BLOCK;
+  private static final boolean CACHE_ENABLE = MEMORY_CONFIG.isMetaDataCacheEnable();
 
   private static final SeriesScanCostMetricSet SERIES_SCAN_COST_METRIC_SET =
       SeriesScanCostMetricSet.getInstance();
@@ -70,13 +72,22 @@ public class ChunkCache {
   // to save memory footprint, we don't save measurementId in ChunkHeader of Chunk
   private final Cache<ChunkCacheKey, Chunk> lruCache;
 
+  static {
+    CACHE_MEMORY_BLOCK =
+        MEMORY_CONFIG
+            .getChunkCacheMemoryManager()
+            .exactAllocate("ChunkCache", MemoryBlockType.STATIC);
+    // TODO @spricoder: find a way to get the size of the ChunkCache
+    CACHE_MEMORY_BLOCK.allocate(CACHE_MEMORY_BLOCK.getTotalMemorySizeInBytes());
+  }
+
   private ChunkCache() {
     if (CACHE_ENABLE) {
-      LOGGER.info("ChunkCache size = {}", MEMORY_THRESHOLD_IN_CHUNK_CACHE);
+      LOGGER.info("ChunkCache size = {}", CACHE_MEMORY_BLOCK.getTotalMemorySizeInBytes());
     }
     lruCache =
         Caffeine.newBuilder()
-            .maximumWeight(MEMORY_THRESHOLD_IN_CHUNK_CACHE)
+            .maximumWeight(CACHE_MEMORY_BLOCK.getTotalMemorySizeInBytes())
             .weigher(
                 (Weigher<ChunkCacheKey, Chunk>)
                     (key, chunk) ->
@@ -191,7 +202,7 @@ public class ChunkCache {
   }
 
   public long getMaxMemory() {
-    return MEMORY_THRESHOLD_IN_CHUNK_CACHE;
+    return CACHE_MEMORY_BLOCK.getTotalMemorySizeInBytes();
   }
 
   public double getAverageLoadPenalty() {
@@ -218,11 +229,7 @@ public class ChunkCache {
     // because filePath is get from TsFileResource, different ChunkCacheKey of the same file
     // share this String.
     private final String filePath;
-    private final int regionId;
-    private final long timePartitionId;
-    private final long tsFileVersion;
-    // high 32 bit is compaction level, low 32 bit is merge count
-    private final long compactionVersion;
+    private final TsFileID tsFileID;
 
     private final long offsetOfChunkHeader;
 
@@ -233,10 +240,7 @@ public class ChunkCache {
     public ChunkCacheKey(
         String filePath, TsFileID tsfileId, long offsetOfChunkHeader, boolean closed) {
       this.filePath = filePath;
-      this.regionId = tsfileId.regionId;
-      this.timePartitionId = tsfileId.timePartitionId;
-      this.tsFileVersion = tsfileId.fileVersion;
-      this.compactionVersion = tsfileId.compactionVersion;
+      this.tsFileID = tsfileId;
       this.offsetOfChunkHeader = offsetOfChunkHeader;
       this.closed = closed;
     }
@@ -258,17 +262,13 @@ public class ChunkCache {
         return false;
       }
       ChunkCacheKey that = (ChunkCacheKey) o;
-      return regionId == that.regionId
-          && timePartitionId == that.timePartitionId
-          && tsFileVersion == that.tsFileVersion
-          && compactionVersion == that.compactionVersion
+      return Objects.equals(tsFileID, that.tsFileID)
           && offsetOfChunkHeader == that.offsetOfChunkHeader;
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(
-          regionId, timePartitionId, tsFileVersion, compactionVersion, offsetOfChunkHeader);
+      return Objects.hash(tsFileID, offsetOfChunkHeader);
     }
 
     @Override
@@ -278,13 +278,13 @@ public class ChunkCache {
           + filePath
           + '\''
           + ", regionId="
-          + regionId
+          + tsFileID.regionId
           + ", timePartitionId="
-          + timePartitionId
+          + tsFileID.timePartitionId
           + ", tsFileVersion="
-          + tsFileVersion
+          + tsFileID.fileVersion
           + ", compactionVersion="
-          + compactionVersion
+          + tsFileID.compactionVersion
           + ", offsetOfChunkHeader="
           + offsetOfChunkHeader
           + '}';

@@ -193,7 +193,7 @@ public class AlterLogicalViewProcedure
     patternTree.appendFullPath(viewPath);
     patternTree.constructTree();
     final Map<String, Map<TSeriesPartitionSlot, TConsensusGroupId>> schemaPartitionTable =
-        env.getConfigManager().getSchemaPartition(patternTree, false).schemaPartitionTable;
+        env.getConfigManager().getSchemaPartition(patternTree).schemaPartitionTable;
     if (schemaPartitionTable.isEmpty()) {
       throw new ProcedureException(new ViewNotExistException(viewPath.getFullPath()));
     } else {
@@ -216,7 +216,9 @@ public class AlterLogicalViewProcedure
   protected void rollbackState(
       final ConfigNodeProcedureEnv env, final AlterLogicalViewState alterLogicalViewState)
       throws IOException, InterruptedException, ProcedureException {
-    invalidateCache(env);
+    if (alterLogicalViewState == AlterLogicalViewState.CLEAN_DATANODE_SCHEMA_CACHE) {
+      invalidateCache(env);
+    }
   }
 
   @Override

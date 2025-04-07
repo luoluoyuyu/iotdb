@@ -56,6 +56,7 @@ import static org.apache.iotdb.commons.conf.IoTDBConstant.TTL_INFINITE;
 public class TsTable {
 
   public static final String TIME_COLUMN_NAME = "time";
+  public static final String COMMENT_KEY = "__comment";
   private static final TimeColumnSchema TIME_COLUMN_SCHEMA =
       new TimeColumnSchema(TIME_COLUMN_NAME, TSDataType.TIMESTAMP);
 
@@ -114,7 +115,7 @@ public class TsTable {
     try {
       final List<TsTableColumnSchema> idColumnSchemaList = new ArrayList<>();
       for (final TsTableColumnSchema columnSchema : columnSchemaMap.values()) {
-        if (TsTableColumnCategory.ID.equals(columnSchema.getColumnCategory())) {
+        if (TsTableColumnCategory.TAG.equals(columnSchema.getColumnCategory())) {
           idColumnSchemaList.add(columnSchema);
         }
       }
@@ -128,10 +129,10 @@ public class TsTable {
     readWriteLock.writeLock().lock();
     try {
       columnSchemaMap.put(columnSchema.getColumnName(), columnSchema);
-      if (columnSchema.getColumnCategory().equals(TsTableColumnCategory.ID)) {
+      if (columnSchema.getColumnCategory().equals(TsTableColumnCategory.TAG)) {
         idNums++;
         idColumnIndexMap.put(columnSchema.getColumnName(), idNums - 1);
-      } else if (columnSchema.getColumnCategory().equals(TsTableColumnCategory.MEASUREMENT)) {
+      } else if (columnSchema.getColumnCategory().equals(TsTableColumnCategory.FIELD)) {
         measurementNum++;
       }
     } finally {
@@ -157,11 +158,11 @@ public class TsTable {
     try {
       final TsTableColumnSchema columnSchema = columnSchemaMap.get(columnName);
       if (columnSchema != null
-          && columnSchema.getColumnCategory().equals(TsTableColumnCategory.ID)) {
+          && columnSchema.getColumnCategory().equals(TsTableColumnCategory.TAG)) {
         throw new SchemaExecutionException("Cannot remove an id column: " + columnName);
       } else if (columnSchema != null) {
         columnSchemaMap.remove(columnName);
-        if (columnSchema.getColumnCategory().equals(TsTableColumnCategory.MEASUREMENT)) {
+        if (columnSchema.getColumnCategory().equals(TsTableColumnCategory.FIELD)) {
           measurementNum--;
         }
       }
@@ -221,11 +222,15 @@ public class TsTable {
     return ttlValue;
   }
 
-  public long getTableTTLInMS() {
+  private long getTableTTLInMS() {
     final Optional<String> ttl = getPropValue(TTL_PROPERTY);
     return ttl.isPresent() && !ttl.get().equalsIgnoreCase(TTL_INFINITE)
         ? Long.parseLong(ttl.get())
         : Long.MAX_VALUE;
+  }
+
+  public Map<String, String> getProps() {
+    return props;
   }
 
   public Optional<String> getPropValue(final String propKey) {

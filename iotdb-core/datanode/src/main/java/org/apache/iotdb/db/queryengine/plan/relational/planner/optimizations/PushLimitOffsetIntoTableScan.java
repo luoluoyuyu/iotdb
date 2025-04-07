@@ -30,6 +30,7 @@ import org.apache.iotdb.db.queryengine.plan.relational.planner.node.AggregationN
 import org.apache.iotdb.db.queryengine.plan.relational.planner.node.DeviceTableScanNode;
 import org.apache.iotdb.db.queryengine.plan.relational.planner.node.FilterNode;
 import org.apache.iotdb.db.queryengine.plan.relational.planner.node.GapFillNode;
+import org.apache.iotdb.db.queryengine.plan.relational.planner.node.GroupNode;
 import org.apache.iotdb.db.queryengine.plan.relational.planner.node.InformationSchemaTableScanNode;
 import org.apache.iotdb.db.queryengine.plan.relational.planner.node.JoinNode;
 import org.apache.iotdb.db.queryengine.plan.relational.planner.node.LimitNode;
@@ -38,6 +39,7 @@ import org.apache.iotdb.db.queryengine.plan.relational.planner.node.PreviousFill
 import org.apache.iotdb.db.queryengine.plan.relational.planner.node.ProjectNode;
 import org.apache.iotdb.db.queryengine.plan.relational.planner.node.SortNode;
 import org.apache.iotdb.db.queryengine.plan.relational.planner.node.StreamSortNode;
+import org.apache.iotdb.db.queryengine.plan.relational.planner.node.TableFunctionProcessorNode;
 import org.apache.iotdb.db.queryengine.plan.relational.planner.node.TopKNode;
 import org.apache.iotdb.db.queryengine.plan.relational.sql.ast.Expression;
 
@@ -193,8 +195,7 @@ public class PushLimitOffsetIntoTableScan implements PlanOptimizer {
 
         // order by measurement or expression, can not push down limit
         if (!tableColumnSchema.containsKey(orderBy)
-            || tableColumnSchema.get(orderBy).getColumnCategory()
-                == TsTableColumnCategory.MEASUREMENT) {
+            || tableColumnSchema.get(orderBy).getColumnCategory() == TsTableColumnCategory.FIELD) {
           context.enablePushDown = false;
           return node;
         }
@@ -204,7 +205,7 @@ public class PushLimitOffsetIntoTableScan implements PlanOptimizer {
 
       boolean pushLimitToEachDevice = false;
       for (Map.Entry<Symbol, ColumnSchema> entry : tableColumnSchema.entrySet()) {
-        if (entry.getValue().getColumnCategory() == TsTableColumnCategory.ID
+        if (entry.getValue().getColumnCategory() == TsTableColumnCategory.TAG
             && !sortSymbols.contains(entry.getKey())) {
           pushLimitToEachDevice = true;
           break;
@@ -216,6 +217,11 @@ public class PushLimitOffsetIntoTableScan implements PlanOptimizer {
 
     @Override
     public PlanNode visitStreamSort(StreamSortNode node, Context context) {
+      return visitSort(node, context);
+    }
+
+    @Override
+    public PlanNode visitGroup(GroupNode node, Context context) {
       return visitSort(node, context);
     }
 
@@ -235,6 +241,16 @@ public class PushLimitOffsetIntoTableScan implements PlanOptimizer {
     public PlanNode visitInformationSchemaTableScan(
         InformationSchemaTableScanNode node, Context context) {
       context.enablePushDown = false;
+      return node;
+    }
+
+    @Override
+    public PlanNode visitTableFunctionProcessor(TableFunctionProcessorNode node, Context context) {
+      context.enablePushDown = false;
+      if (node.getChild() != null) {
+        Context subContext = new Context();
+        node.setChild(node.getChild().accept(this, subContext));
+      }
       return node;
     }
 

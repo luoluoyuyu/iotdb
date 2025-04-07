@@ -105,6 +105,8 @@ public class RepairUnsortedFileCompactionTask extends InnerSpaceCompactionTask {
   @Override
   protected void prepare() throws IOException {
     calculateSourceFilesAndTargetFiles();
+    CompactionUtils.prepareCompactionModFiles(
+        filesView.targetFilesInPerformer, filesView.sourceFilesInLog);
     isHoldingWriteLock = new boolean[this.filesView.sourceFilesInLog.size()];
     Arrays.fill(isHoldingWriteLock, false);
     logFile =
@@ -149,7 +151,7 @@ public class RepairUnsortedFileCompactionTask extends InnerSpaceCompactionTask {
 
   @Override
   protected void prepareTargetFiles() throws IOException {
-    CompactionUtils.updateProgressIndex(
+    CompactionUtils.updateProgressIndexAndMark(
         filesView.targetFilesInPerformer,
         filesView.sourceFilesInCompactionPerformer,
         Collections.emptyList());

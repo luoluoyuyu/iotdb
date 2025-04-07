@@ -30,11 +30,15 @@ function process_single(){
 	if [[ -n "${line}" ]]; then
     echo "update $key $filename"
     local line_no=$(echo $line|cut -d : -f1)
-		local content=$(echo $line|cut -d : -f2)
-		if [[ "${content:0:1}" != "#" ]]; then
+    local content=$(echo $line|cut -d : -f2)
+    if [[ "${content:0:1}" != "#" ]]; then
       sed -i "${line_no}d" ${filename}
     fi
     sed -i "${line_no} i${key_value}" ${filename}
+  else
+    echo "append  $key $filename"
+    line_no=$(wc -l $filename)
+    sed -i "${line_no} a${key_value}" ${filename}
 	fi
 }
 

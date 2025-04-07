@@ -45,7 +45,6 @@ import org.apache.iotdb.confignode.consensus.request.write.partition.RemoveRegio
 import org.apache.iotdb.confignode.manager.ConfigManager;
 import org.apache.iotdb.confignode.manager.load.cache.consensus.ConsensusGroupHeartbeatSample;
 import org.apache.iotdb.confignode.procedure.exception.ProcedureException;
-import org.apache.iotdb.confignode.procedure.scheduler.LockQueue;
 import org.apache.iotdb.mpp.rpc.thrift.TCreatePeerReq;
 import org.apache.iotdb.mpp.rpc.thrift.TMaintainPeerReq;
 import org.apache.iotdb.mpp.rpc.thrift.TRegionLeaderChangeResp;
@@ -78,9 +77,6 @@ public class RegionMaintainHandler {
 
   private final ConfigManager configManager;
 
-  /** region migrate lock */
-  private final LockQueue regionMigrateLock = new LockQueue();
-
   private final IClientManager<TEndPoint, SyncDataNodeInternalServiceClient> dataNodeClientManager;
 
   public RegionMaintainHandler(ConfigManager configManager) {
@@ -95,6 +91,10 @@ public class RegionMaintainHandler {
     return String.format(
         "[dataNodeId: %s, clientRpcEndPoint: %s]",
         location.getDataNodeId(), location.getClientRpcEndPoint());
+  }
+
+  public static String simplifiedLocation(TDataNodeLocation dataNodeLocation) {
+    return dataNodeLocation.getDataNodeId() + "@" + dataNodeLocation.getInternalEndPoint().getIp();
   }
 
   /**
@@ -399,15 +399,30 @@ public class RegionMaintainHandler {
    * @return DataNode locations
    */
   public List<TDataNodeLocation> findRegionLocations(TConsensusGroupId regionId) {
-    Optional<TRegionReplicaSet> regionReplicaSet =
-        configManager.getPartitionManager().getAllReplicaSets().stream()
-            .filter(rg -> rg.regionId.equals(regionId))
-            .findAny();
+    Optional<TRegionReplicaSet> regionReplicaSet = getRegionReplicaSet(regionId);
     if (regionReplicaSet.isPresent()) {
       return regionReplicaSet.get().getDataNodeLocations();
     }
-
     return Collections.emptyList();
+  }
+
+  public Optional<TRegionReplicaSet> getRegionReplicaSet(TConsensusGroupId regionId) {
+    return configManager.getPartitionManager().getAllReplicaSets().stream()
+        .filter(rg -> rg.regionId.equals(regionId))
+        .findAny();
+  }
+
+  public String getRegionReplicaSetString(TConsensusGroupId regionId) {
+    Optional<TRegionReplicaSet> regionReplicaSet = getRegionReplicaSet(regionId);
+    if (!regionReplicaSet.isPresent()) {
+      return "UNKNOWN!";
+    }
+    StringBuilder result = new StringBuilder(regionReplicaSet.get().getRegionId() + ": {");
+    for (TDataNodeLocation dataNodeLocation : regionReplicaSet.get().getDataNodeLocations()) {
+      result.append(simplifiedLocation(dataNodeLocation)).append(", ");
+    }
+    result.append("}");
+    return result.toString();
   }
 
   private Optional<TDataNodeLocation> pickNewReplicaNodeForRegion(
@@ -428,10 +443,6 @@ public class RegionMaintainHandler {
 
   public boolean isFailed(TSStatus status) {
     return !isSucceed(status);
-  }
-
-  public LockQueue getRegionMigrateLock() {
-    return regionMigrateLock;
   }
 
   /**
@@ -558,12 +569,19 @@ public class RegionMaintainHandler {
         configManager.getNodeManager().filterDataNodeThroughStatus(allowingStatus).stream()
             .map(TDataNodeConfiguration::getLocation)
             .collect(Collectors.toList());
+    final int leaderId = configManager.getLoadManager().getRegionLeaderMap().get(regionId);
     Collections.shuffle(aliveDataNodes);
+    Optional<TDataNodeLocation> bestChoice = Optional.empty();
     for (TDataNodeLocation aliveDataNode : aliveDataNodes) {
       if (regionLocations.contains(aliveDataNode) && !excludeLocations.contains(aliveDataNode)) {
-        return Optional.of(aliveDataNode);
+        if (leaderId == aliveDataNode.getDataNodeId()) {
+          bestChoice = Optional.of(aliveDataNode);
+          break;
+        } else if (!bestChoice.isPresent()) {
+          bestChoice = Optional.of(aliveDataNode);
+        }
       }
     }
-    return Optional.empty();
+    return bestChoice;
   }
 }

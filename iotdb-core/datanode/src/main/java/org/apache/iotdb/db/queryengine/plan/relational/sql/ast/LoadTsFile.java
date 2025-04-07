@@ -36,38 +36,49 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
 public class LoadTsFile extends Statement {
+
   private final String filePath;
 
-  private final File file;
   private int databaseLevel; // For loading to tree-model only
   private String database; // For loading to table-model only
-  private boolean deleteAfterLoad;
-  private boolean autoCreateDatabase;
-  private String model = LoadTsFileConfigurator.MODEL_TABLE_VALUE;
+  private boolean deleteAfterLoad = false;
+  private boolean convertOnTypeMismatch = true;
+  private long tabletConversionThresholdBytes = -1;
+  private boolean autoCreateDatabase = true;
+  private boolean verify = true;
+  private boolean isAsyncLoad = false;
+
+  private boolean isGeneratedByPipe = false;
 
   private final Map<String, String> loadAttributes;
 
-  private final List<File> tsFiles;
-  private final List<TsFileResource> resources;
-  private final List<Long> writePointCountList;
+  private List<File> tsFiles;
+  private List<TsFileResource> resources;
+  private List<Long> writePointCountList;
+  private List<Boolean> isTableModel;
 
   public LoadTsFile(NodeLocation location, String filePath, Map<String, String> loadAttributes) {
     super(location);
     this.filePath = requireNonNull(filePath, "filePath is null");
 
-    this.file = new File(filePath);
     this.databaseLevel = IoTDBDescriptor.getInstance().getConfig().getDefaultStorageGroupLevel();
     this.deleteAfterLoad = false;
+    this.convertOnTypeMismatch = true;
+    this.tabletConversionThresholdBytes =
+        IoTDBDescriptor.getInstance().getConfig().getLoadTabletConversionThresholdBytes();
     this.autoCreateDatabase = IoTDBDescriptor.getInstance().getConfig().isAutoCreateSchemaEnabled();
-    this.resources = new ArrayList<>();
-    this.writePointCountList = new ArrayList<>();
-    this.loadAttributes = loadAttributes;
+    this.verify = true;
+
+    this.loadAttributes = loadAttributes == null ? Collections.emptyMap() : loadAttributes;
     initAttributes();
 
     try {
       this.tsFiles =
           org.apache.iotdb.db.queryengine.plan.statement.crud.LoadTsFileStatement.processTsFile(
-              file);
+              new File(filePath));
+      this.resources = new ArrayList<>();
+      this.writePointCountList = new ArrayList<>();
+      this.isTableModel = new ArrayList<>(Collections.nCopies(this.tsFiles.size(), true));
     } catch (FileNotFoundException e) {
       throw new SemanticException(e);
     }
@@ -85,12 +96,34 @@ public class LoadTsFile extends Statement {
     this.autoCreateDatabase = autoCreateDatabase;
   }
 
+  public boolean isAutoCreateDatabase() {
+    return autoCreateDatabase;
+  }
+
   public boolean isDeleteAfterLoad() {
     return deleteAfterLoad;
   }
 
-  public boolean isAutoCreateDatabase() {
-    return autoCreateDatabase;
+  public LoadTsFile setDeleteAfterLoad(boolean deleteAfterLoad) {
+    this.deleteAfterLoad = deleteAfterLoad;
+    return this;
+  }
+
+  public boolean isConvertOnTypeMismatch() {
+    return convertOnTypeMismatch;
+  }
+
+  public LoadTsFile setConvertOnTypeMismatch(boolean convertOnTypeMismatch) {
+    this.convertOnTypeMismatch = convertOnTypeMismatch;
+    return this;
+  }
+
+  public long getTabletConversionThresholdBytes() {
+    return tabletConversionThresholdBytes;
+  }
+
+  public boolean isVerifySchema() {
+    return verify;
   }
 
   public int getDatabaseLevel() {
@@ -101,12 +134,29 @@ public class LoadTsFile extends Statement {
     return database;
   }
 
-  public void setDatabase(String database) {
+  public LoadTsFile setDatabase(String database) {
     this.database = database;
+    return this;
   }
 
-  public String getModel() {
-    return model;
+  public boolean isAsyncLoad() {
+    return isAsyncLoad;
+  }
+
+  public void markIsGeneratedByPipe() {
+    isGeneratedByPipe = true;
+  }
+
+  public boolean isGeneratedByPipe() {
+    return isGeneratedByPipe;
+  }
+
+  public List<Boolean> getIsTableModel() {
+    return isTableModel;
+  }
+
+  public void setIsTableModel(List<Boolean> isTableModel) {
+    this.isTableModel = isTableModel;
   }
 
   public List<File> getTsFiles() {
@@ -133,9 +183,53 @@ public class LoadTsFile extends Statement {
     this.databaseLevel = LoadTsFileConfigurator.parseOrGetDefaultDatabaseLevel(loadAttributes);
     this.database = LoadTsFileConfigurator.parseDatabaseName(loadAttributes);
     this.deleteAfterLoad = LoadTsFileConfigurator.parseOrGetDefaultOnSuccess(loadAttributes);
-    this.model =
-        LoadTsFileConfigurator.parseOrGetDefaultModel(
-            loadAttributes, LoadTsFileConfigurator.MODEL_TABLE_VALUE);
+    this.convertOnTypeMismatch =
+        LoadTsFileConfigurator.parseOrGetDefaultConvertOnTypeMismatch(loadAttributes);
+    this.tabletConversionThresholdBytes =
+        LoadTsFileConfigurator.parseOrGetDefaultTabletConversionThresholdBytes(loadAttributes);
+    this.verify = LoadTsFileConfigurator.parseOrGetDefaultVerify(loadAttributes);
+    this.isAsyncLoad = LoadTsFileConfigurator.parseOrGetDefaultAsyncLoad(loadAttributes);
+  }
+
+  public boolean reconstructStatementIfMiniFileConverted(final List<Boolean> isMiniTsFile) {
+    int lastNonMiniTsFileIndex = -1;
+
+    for (int i = 0, n = isMiniTsFile.size(); i < n; i++) {
+      if (isMiniTsFile.get(i)) {
+        continue;
+      }
+
+      ++lastNonMiniTsFileIndex;
+      if (tsFiles != null) {
+        tsFiles.set(lastNonMiniTsFileIndex, tsFiles.get(i));
+      }
+      if (isTableModel != null) {
+        isTableModel.set(lastNonMiniTsFileIndex, isTableModel.get(i));
+      }
+      if (resources != null) {
+        resources.set(lastNonMiniTsFileIndex, resources.get(i));
+      }
+      if (writePointCountList != null) {
+        writePointCountList.set(lastNonMiniTsFileIndex, writePointCountList.get(i));
+      }
+    }
+
+    tsFiles =
+        tsFiles != null ? tsFiles.subList(0, lastNonMiniTsFileIndex + 1) : Collections.emptyList();
+    isTableModel =
+        isTableModel != null
+            ? isTableModel.subList(0, lastNonMiniTsFileIndex + 1)
+            : Collections.emptyList();
+    resources =
+        resources != null
+            ? resources.subList(0, lastNonMiniTsFileIndex + 1)
+            : Collections.emptyList();
+    writePointCountList =
+        writePointCountList != null
+            ? writePointCountList.subList(0, lastNonMiniTsFileIndex + 1)
+            : Collections.emptyList();
+
+    return tsFiles == null || tsFiles.isEmpty();
   }
 
   @Override

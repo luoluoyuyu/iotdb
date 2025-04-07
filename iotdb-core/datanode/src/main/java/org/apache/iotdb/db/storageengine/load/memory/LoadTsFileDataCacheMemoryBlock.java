@@ -19,7 +19,7 @@
 
 package org.apache.iotdb.db.storageengine.load.memory;
 
-import org.apache.iotdb.db.exception.LoadRuntimeOutOfMemoryException;
+import org.apache.iotdb.db.exception.load.LoadRuntimeOutOfMemoryException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,7 +74,7 @@ public class LoadTsFileDataCacheMemoryBlock extends LoadTsFileAbstractMemoryBloc
   @Override
   public synchronized void forceResize(long newSizeInBytes) {
     throw new UnsupportedOperationException(
-        "resize is not supported for LoadTsFileDataCacheMemoryBlock");
+        "setTotalMemorySizeInBytes is not supported for LoadTsFileDataCacheMemoryBlock");
   }
 
   @Override
@@ -128,7 +128,7 @@ public class LoadTsFileDataCacheMemoryBlock extends LoadTsFileAbstractMemoryBloc
     return "LoadTsFileDataCacheMemoryBlock{"
         + "limitedMemorySizeInBytes="
         + limitedMemorySizeInBytes.get()
-        + ", memoryUsageInBytes="
+        + ", usedMemoryInBytes="
         + memoryUsageInBytes.get()
         + '}';
   }

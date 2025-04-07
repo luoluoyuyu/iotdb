@@ -139,7 +139,9 @@ public class FastCompactionPerformer
         long ttl = deviceIterator.getTTLForCurrentDevice();
         sortedSourceFiles.removeIf(
             x -> x.definitelyNotContains(device) || !x.isDeviceAlive(device, ttl));
-        sortedSourceFiles.sort(Comparator.comparingLong(x -> x.getStartTime(device)));
+        // checked above
+        //noinspection OptionalGetWithoutIsPresent
+        sortedSourceFiles.sort(Comparator.comparingLong(x -> x.getStartTime(device).get()));
         if (ttl != Long.MAX_VALUE) {
           ModEntry ttlDeletion =
               CompactionUtils.convertTtlToDeletion(
@@ -286,6 +288,21 @@ public class FastCompactionPerformer
           throw (StopReadTsFileByInterruptException) cause;
         }
         throw new IOException("[Compaction] SubCompactionTask meet errors ", e);
+      } catch (InterruptedException e) {
+        abortAllSubTasks(futures);
+        throw e;
+      }
+    }
+  }
+
+  private void abortAllSubTasks(List<Future<Void>> futures) {
+    for (Future<Void> future : futures) {
+      future.cancel(true);
+    }
+    for (Future<Void> future : futures) {
+      try {
+        future.get();
+      } catch (Exception ignored) {
       }
     }
   }

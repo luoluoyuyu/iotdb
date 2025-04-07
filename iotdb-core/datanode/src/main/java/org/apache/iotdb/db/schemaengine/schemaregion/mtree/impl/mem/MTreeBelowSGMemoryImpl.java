@@ -200,7 +200,7 @@ public class MTreeBelowSGMemoryImpl {
       final Function<IMeasurementMNode<IMemMNode>, Map<String, String>> attributeGetter)
       throws IOException, IllegalPathException {
     return new MTreeBelowSGMemoryImpl(
-        PartialPath.getDatabasePath(storageGroupFullPath),
+        PartialPath.getQualifiedDatabasePartialPath(storageGroupFullPath),
         MemMTreeStore.loadFromSnapshot(
             snapshotDir,
             measurementProcess,
@@ -1605,7 +1605,7 @@ public class MTreeBelowSGMemoryImpl {
       final IntSupplier attributePointerGetter,
       final IntConsumer attributeUpdater)
       throws MetadataException {
-    // todo implement storage for device of diverse data types\
+    // todo implement storage for device of diverse data types
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Start to create table device {}.{}", tableName, Arrays.toString(devicePath));
     }

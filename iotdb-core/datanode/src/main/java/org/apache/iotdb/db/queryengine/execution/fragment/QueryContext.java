@@ -28,6 +28,7 @@ import org.apache.iotdb.db.storageengine.dataregion.tsfile.TsFileResource;
 import org.apache.iotdb.db.utils.ModificationUtils;
 import org.apache.iotdb.db.utils.datastructure.PatternTreeMapFactory;
 import org.apache.iotdb.db.utils.datastructure.PatternTreeMapFactory.ModsSerializer;
+import org.apache.iotdb.db.utils.datastructure.TVList;
 
 import org.apache.tsfile.file.metadata.IDeviceID;
 import org.slf4j.Logger;
@@ -35,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -70,6 +72,9 @@ public class QueryContext {
   private boolean ignoreAllNullRows = true;
 
   private final Set<TsFileID> nonExistentModFiles = new CopyOnWriteArraySet<>();
+
+  // referenced TVLists for the query
+  protected final Set<TVList> tvListSet = new HashSet<>();
 
   public QueryContext() {}
 
@@ -119,8 +124,7 @@ public class QueryContext {
     }
 
     List<ModEntry> modEntries =
-        ModificationUtils.sortAndMerge(
-            getAllModifications(tsFileResource).getOverlapped(deviceID, measurement));
+        getAllModifications(tsFileResource).getOverlapped(deviceID, measurement);
     if (deviceID.isTableModel()) {
       // the pattern tree has false-positive for table model deletion, so we do a further
       //     filtering
@@ -129,6 +133,8 @@ public class QueryContext {
               .filter(mod -> mod.affects(deviceID) && mod.affects(measurement))
               .collect(Collectors.toList());
     }
+    modEntries = ModificationUtils.sortAndMerge(modEntries);
+
     return modEntries;
   }
 
@@ -138,9 +144,16 @@ public class QueryContext {
     if (!checkIfModificationExists(tsFileResource)) {
       return Collections.emptyList();
     }
-
-    return ModificationUtils.sortAndMerge(
-        getAllModifications(tsFileResource).getDeviceOverlapped(new PartialPath(deviceID)));
+    List<ModEntry> modEntries =
+        getAllModifications(tsFileResource).getOverlapped(new PartialPath(deviceID));
+    if (deviceID.isTableModel()) {
+      // the pattern tree has false-positive for table model deletion, so we do a further
+      //     filtering
+      modEntries =
+          modEntries.stream().filter(mod -> mod.affects(deviceID)).collect(Collectors.toList());
+    }
+    modEntries = ModificationUtils.sortAndMerge(modEntries);
+    return modEntries;
   }
 
   /**
@@ -205,5 +218,9 @@ public class QueryContext {
 
   public void setIgnoreAllNullRows(boolean ignoreAllNullRows) {
     this.ignoreAllNullRows = ignoreAllNullRows;
+  }
+
+  public void addTVListToSet(Map<TVList, Integer> tvListMap) {
+    tvListSet.addAll(tvListMap.keySet());
   }
 }

@@ -25,7 +25,6 @@ import org.apache.iotdb.commons.consensus.ConfigRegionId;
 import org.apache.iotdb.confignode.rpc.thrift.TCreatePipeReq;
 import org.apache.iotdb.consensus.pipe.consensuspipe.ConsensusPipeDispatcher;
 import org.apache.iotdb.consensus.pipe.consensuspipe.ConsensusPipeName;
-import org.apache.iotdb.db.pipe.agent.PipeDataNodeAgent;
 import org.apache.iotdb.db.protocol.client.ConfigNodeClient;
 import org.apache.iotdb.db.protocol.client.ConfigNodeClientManager;
 import org.apache.iotdb.db.protocol.client.ConfigNodeInfo;
@@ -36,6 +35,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+
+import static org.apache.iotdb.commons.pipe.config.constant.PipeRPCMessageConstant.PIPE_ALREADY_EXIST_MSG;
+import static org.apache.iotdb.commons.pipe.config.constant.PipeRPCMessageConstant.PIPE_NOT_EXIST_MSG;
 
 public class ConsensusPipeDataNodeDispatcher implements ConsensusPipeDispatcher {
   private static final Logger LOGGER =
@@ -64,6 +66,10 @@ public class ConsensusPipeDataNodeDispatcher implements ConsensusPipeDispatcher 
       TSStatus status = configNodeClient.createPipe(req);
       if (TSStatusCode.SUCCESS_STATUS.getStatusCode() != status.getCode()) {
         LOGGER.warn("Failed to create consensus pipe-{}, status: {}", pipeName, status);
+        // ignore idempotence logic
+        if (status.getMessage().contains(PIPE_ALREADY_EXIST_MSG)) {
+          return;
+        }
         throw new PipeException(status.getMessage());
       }
     } catch (Exception e) {
@@ -111,13 +117,15 @@ public class ConsensusPipeDataNodeDispatcher implements ConsensusPipeDispatcher 
       final TSStatus status = configNodeClient.dropPipe(pipeName.toString());
       if (TSStatusCode.SUCCESS_STATUS.getStatusCode() != status.getCode()) {
         LOGGER.warn("Failed to drop consensus pipe-{}, status: {}", pipeName, status);
+        // ignore idempotence logic
+        if (status.getMessage().contains(PIPE_NOT_EXIST_MSG)) {
+          return;
+        }
         throw new PipeException(status.getMessage());
       }
     } catch (Exception e) {
       LOGGER.warn("Failed to drop consensus pipe-{}", pipeName, e);
       throw new PipeException("Failed to drop consensus pipe", e);
     }
-    // Release corresponding receiver's resource
-    PipeDataNodeAgent.receiver().pipeConsensus().handleDropPipeConsensusTask(pipeName);
   }
 }

@@ -19,6 +19,7 @@
 
 package org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.grouped;
 
+import org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.AggregationMask;
 import org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.grouped.array.BooleanBigArray;
 import org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.grouped.array.DoubleBigArray;
 import org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.grouped.array.FloatBigArray;
@@ -66,7 +67,7 @@ public class GroupedExtremeAccumulator implements GroupedAccumulator {
       case TIMESTAMP:
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type : %s", seriesDataType));
+            String.format("Unsupported data type EXTREME Aggregation: %s", seriesDataType));
     }
   }
 
@@ -96,7 +97,7 @@ public class GroupedExtremeAccumulator implements GroupedAccumulator {
         break;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type in : %s", seriesDataType));
+            String.format("Unsupported data type in EXTREME Aggregation: %s", seriesDataType));
     }
 
     return INSTANCE_SIZE + valuesSize;
@@ -104,6 +105,7 @@ public class GroupedExtremeAccumulator implements GroupedAccumulator {
 
   @Override
   public void setGroupCount(long groupCount) {
+    inits.ensureCapacity(groupCount);
     switch (seriesDataType) {
       case INT32:
       case DATE:
@@ -125,25 +127,25 @@ public class GroupedExtremeAccumulator implements GroupedAccumulator {
       case BOOLEAN:
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type in : %s", seriesDataType));
+            String.format("Unsupported data type in EXTREME Aggregation: %s", seriesDataType));
     }
   }
 
   @Override
-  public void addInput(int[] groupIds, Column[] arguments) {
+  public void addInput(int[] groupIds, Column[] arguments, AggregationMask mask) {
 
     switch (seriesDataType) {
       case INT32:
-        addIntInput(groupIds, arguments[0]);
+        addIntInput(groupIds, arguments[0], mask);
         return;
       case INT64:
-        addLongInput(groupIds, arguments[0]);
+        addLongInput(groupIds, arguments[0], mask);
         return;
       case FLOAT:
-        addFloatInput(groupIds, arguments[0]);
+        addFloatInput(groupIds, arguments[0], mask);
         return;
       case DOUBLE:
-        addDoubleInput(groupIds, arguments[0]);
+        addDoubleInput(groupIds, arguments[0], mask);
         return;
       case TEXT:
       case STRING:
@@ -153,7 +155,7 @@ public class GroupedExtremeAccumulator implements GroupedAccumulator {
       case TIMESTAMP:
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type : %s", seriesDataType));
+            String.format("Unsupported data type EXTREME Aggregation: %s", seriesDataType));
     }
   }
 
@@ -186,7 +188,7 @@ public class GroupedExtremeAccumulator implements GroupedAccumulator {
         case TIMESTAMP:
         default:
           throw new UnSupportedDataTypeException(
-              String.format("Unsupported data type: %s", seriesDataType));
+              String.format("Unsupported data type in EXTREME Aggregation: %s", seriesDataType));
       }
     }
   }
@@ -217,7 +219,7 @@ public class GroupedExtremeAccumulator implements GroupedAccumulator {
         case TIMESTAMP:
         default:
           throw new UnSupportedDataTypeException(
-              String.format("Unsupported data type: %s", seriesDataType));
+              String.format("Unsupported data type in EXTREME Aggregation: %s", seriesDataType));
       }
     }
   }
@@ -248,7 +250,7 @@ public class GroupedExtremeAccumulator implements GroupedAccumulator {
         case TIMESTAMP:
         default:
           throw new UnSupportedDataTypeException(
-              String.format("Unsupported data type: %s", seriesDataType));
+              String.format("Unsupported data type in EXTREME Aggregation: %s", seriesDataType));
       }
     }
   }
@@ -280,14 +282,27 @@ public class GroupedExtremeAccumulator implements GroupedAccumulator {
       case TIMESTAMP:
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type : %s", seriesDataType));
+            String.format("Unsupported data type in EXTREME Aggregation: %s", seriesDataType));
     }
   }
 
-  private void addIntInput(int[] groupIds, Column valueColumn) {
-    for (int i = 0; i < groupIds.length; i++) {
-      if (!valueColumn.isNull(i)) {
-        updateIntValue(groupIds[i], Math.abs(valueColumn.getInt(i)));
+  private void addIntInput(int[] groupIds, Column valueColumn, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < positionCount; i++) {
+        if (!valueColumn.isNull(i)) {
+          updateIntValue(groupIds[i], Math.abs(valueColumn.getInt(i)));
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!valueColumn.isNull(position)) {
+          updateIntValue(groupIds[position], Math.abs(valueColumn.getInt(position)));
+        }
       }
     }
   }
@@ -300,10 +315,23 @@ public class GroupedExtremeAccumulator implements GroupedAccumulator {
     }
   }
 
-  private void addLongInput(int[] groupIds, Column valueColumn) {
-    for (int i = 0; i < groupIds.length; i++) {
-      if (!valueColumn.isNull(i)) {
-        updateLongValue(groupIds[i], Math.abs(valueColumn.getLong(i)));
+  private void addLongInput(int[] groupIds, Column valueColumn, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < positionCount; i++) {
+        if (!valueColumn.isNull(i)) {
+          updateLongValue(groupIds[i], Math.abs(valueColumn.getLong(i)));
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!valueColumn.isNull(position)) {
+          updateLongValue(groupIds[position], Math.abs(valueColumn.getLong(position)));
+        }
       }
     }
   }
@@ -316,10 +344,23 @@ public class GroupedExtremeAccumulator implements GroupedAccumulator {
     }
   }
 
-  private void addFloatInput(int[] groupIds, Column valueColumn) {
-    for (int i = 0; i < groupIds.length; i++) {
-      if (!valueColumn.isNull(i)) {
-        updateFloatValue(groupIds[i], Math.abs(valueColumn.getFloat(i)));
+  private void addFloatInput(int[] groupIds, Column valueColumn, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < positionCount; i++) {
+        if (!valueColumn.isNull(i)) {
+          updateFloatValue(groupIds[i], Math.abs(valueColumn.getFloat(i)));
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!valueColumn.isNull(position)) {
+          updateFloatValue(groupIds[position], Math.abs(valueColumn.getFloat(position)));
+        }
       }
     }
   }
@@ -332,10 +373,23 @@ public class GroupedExtremeAccumulator implements GroupedAccumulator {
     }
   }
 
-  private void addDoubleInput(int[] groupIds, Column valueColumn) {
-    for (int i = 0; i < groupIds.length; i++) {
-      if (!valueColumn.isNull(i)) {
-        updateDoubleValue(groupIds[i], Math.abs(valueColumn.getDouble(i)));
+  private void addDoubleInput(int[] groupIds, Column valueColumn, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < positionCount; i++) {
+        if (!valueColumn.isNull(i)) {
+          updateDoubleValue(groupIds[i], Math.abs(valueColumn.getDouble(i)));
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!valueColumn.isNull(position)) {
+          updateDoubleValue(groupIds[position], Math.abs(valueColumn.getDouble(position)));
+        }
       }
     }
   }

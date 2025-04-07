@@ -62,7 +62,7 @@ public class ClusterManager {
   private final IManager configManager;
   private final ClusterInfo clusterInfo;
 
-  private static final String CONSENSUS_WRITE_ERROR =
+  public static final String CONSENSUS_WRITE_ERROR =
       "Failed in the write API executing the consensus layer due to: ";
 
   public ClusterManager(IManager configManager, ClusterInfo clusterInfo) {
@@ -249,7 +249,8 @@ public class ClusterManager {
             location -> {
               TEndPoint endPoint = location.getInternalEndPoint();
               TServiceProvider serviceProvider =
-                  new TServiceProvider(endPoint, TServiceType.ConfigNodeInternalService);
+                  new TServiceProvider(
+                      endPoint, TServiceType.ConfigNodeInternalService, location.getConfigNodeId());
               TTestConnectionResult result =
                   new TTestConnectionResult().setServiceProvider(serviceProvider).setSender(sender);
               result.setSuccess(false).setReason(errorMessage);
@@ -261,7 +262,8 @@ public class ClusterManager {
             location -> {
               TEndPoint endPoint = location.getInternalEndPoint();
               TServiceProvider serviceProvider =
-                  new TServiceProvider(endPoint, TServiceType.DataNodeInternalService);
+                  new TServiceProvider(
+                      endPoint, TServiceType.DataNodeInternalService, location.getDataNodeId());
               TTestConnectionResult result =
                   new TTestConnectionResult().setServiceProvider(serviceProvider).setSender(sender);
               result.setSuccess(false).setReason(errorMessage);
@@ -274,7 +276,8 @@ public class ClusterManager {
               location -> {
                 TEndPoint endPoint = location.getMPPDataExchangeEndPoint();
                 TServiceProvider serviceProvider =
-                    new TServiceProvider(endPoint, TServiceType.DataNodeMPPService);
+                    new TServiceProvider(
+                        endPoint, TServiceType.DataNodeMPPService, location.getDataNodeId());
                 TTestConnectionResult result =
                     new TTestConnectionResult()
                         .setServiceProvider(serviceProvider)
@@ -288,7 +291,8 @@ public class ClusterManager {
               location -> {
                 TEndPoint endPoint = location.getClientRpcEndPoint();
                 TServiceProvider serviceProvider =
-                    new TServiceProvider(endPoint, TServiceType.DataNodeExternalService);
+                    new TServiceProvider(
+                        endPoint, TServiceType.DataNodeExternalService, location.getDataNodeId());
                 TTestConnectionResult result =
                     new TTestConnectionResult()
                         .setServiceProvider(serviceProvider)

@@ -27,6 +27,7 @@ import org.apache.iotdb.commons.client.sync.SyncDataNodeInternalServiceClient;
 import org.apache.iotdb.db.queryengine.common.MPPQueryContext;
 import org.apache.iotdb.db.queryengine.execution.QueryStateMachine;
 import org.apache.iotdb.db.queryengine.execution.warnings.WarningCollector;
+import org.apache.iotdb.db.queryengine.metric.QueryPlanCostMetricSet;
 import org.apache.iotdb.db.queryengine.plan.analyze.ClusterPartitionFetcher;
 import org.apache.iotdb.db.queryengine.plan.analyze.IAnalysis;
 import org.apache.iotdb.db.queryengine.plan.planner.IPlanner;
@@ -59,6 +60,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
+
+import static org.apache.iotdb.db.queryengine.metric.QueryPlanCostMetricSet.DISTRIBUTION_PLANNER;
 
 public class TableModelPlanner implements IPlanner {
 
@@ -145,15 +148,26 @@ public class TableModelPlanner implements IPlanner {
 
   @Override
   public DistributedQueryPlan doDistributionPlan(
-      final IAnalysis analysis, final LogicalQueryPlan logicalPlan) {
-    return new TableDistributedPlanner(
-            (Analysis) analysis,
-            symbolAllocator,
-            logicalPlan,
-            metadata,
-            distributionPlanOptimizers,
-            dataNodeLocationSupplier)
-        .plan();
+      final IAnalysis analysis, final LogicalQueryPlan logicalPlan, MPPQueryContext context) {
+    long startTime = System.nanoTime();
+    try {
+      TableDistributedPlanner planner =
+          new TableDistributedPlanner(
+              (Analysis) analysis,
+              symbolAllocator,
+              logicalPlan,
+              metadata,
+              distributionPlanOptimizers,
+              dataNodeLocationSupplier);
+      return planner.plan();
+    } finally {
+      if (analysis.isQuery()) {
+        long distributionPlanCost = System.nanoTime() - startTime;
+        context.setDistributionPlanCost(distributionPlanCost);
+        QueryPlanCostMetricSet.getInstance()
+            .recordTablePlanCost(DISTRIBUTION_PLANNER, distributionPlanCost);
+      }
+    }
   }
 
   @Override
@@ -202,8 +216,7 @@ public class TableModelPlanner implements IPlanner {
   }
 
   @Override
-  public void setRedirectInfo(
-      IAnalysis iAnalysis, TEndPoint localEndPoint, TSStatus tsstatus, TSStatusCode statusCode) {
+  public void setRedirectInfo(IAnalysis iAnalysis, TEndPoint localEndPoint, TSStatus tsstatus) {
     Analysis analysis = (Analysis) iAnalysis;
 
     // Get the inner statement of PipeEnriched
@@ -221,7 +234,7 @@ public class TableModelPlanner implements IPlanner {
     if (!analysis.isFinishQueryAfterAnalyze()) {
       // Table Model Session only supports insertTablet
       if (insertStatement instanceof InsertTabletStatement) {
-        if (statusCode == TSStatusCode.SUCCESS_STATUS) {
+        if (tsstatus.getCode() == TSStatusCode.SUCCESS_STATUS.getStatusCode()) {
           boolean needRedirect = false;
           List<TEndPoint> redirectNodeList = analysis.getRedirectNodeList();
           List<TSStatus> subStatus = new ArrayList<>(redirectNodeList.size());

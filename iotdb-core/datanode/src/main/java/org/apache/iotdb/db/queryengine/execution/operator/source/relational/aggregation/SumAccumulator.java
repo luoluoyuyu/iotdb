@@ -50,20 +50,20 @@ public class SumAccumulator implements TableAccumulator {
   }
 
   @Override
-  public void addInput(Column[] arguments) {
-    checkArgument(arguments.length == 1, "argument of Sum should be one column");
+  public void addInput(Column[] arguments, AggregationMask mask) {
+    checkArgument(arguments.length == 1, "argument of SUM should be one column");
     switch (argumentDataType) {
       case INT32:
-        addIntInput(arguments[0]);
+        addIntInput(arguments[0], mask);
         return;
       case INT64:
-        addLongInput(arguments[0]);
+        addLongInput(arguments[0], mask);
         return;
       case FLOAT:
-        addFloatInput(arguments[0]);
+        addFloatInput(arguments[0], mask);
         return;
       case DOUBLE:
-        addDoubleInput(arguments[0]);
+        addDoubleInput(arguments[0], mask);
         return;
       case TEXT:
       case BLOB:
@@ -73,13 +73,13 @@ public class SumAccumulator implements TableAccumulator {
       case TIMESTAMP:
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type in aggregation Sum : %s", argumentDataType));
+            String.format("Unsupported data type in SUM Aggregation: %s", argumentDataType));
     }
   }
 
   @Override
   public void removeInput(Column[] arguments) {
-    checkArgument(arguments.length == 1, "argument of Sum should be one column");
+    checkArgument(arguments.length == 1, "argument of SUM should be one column");
     switch (argumentDataType) {
       case INT32:
         removeIntInput(arguments[0]);
@@ -101,7 +101,7 @@ public class SumAccumulator implements TableAccumulator {
       case TIMESTAMP:
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type in aggregation Sum : %s", argumentDataType));
+            String.format("Unsupported data type in SUM Aggregation: %s", argumentDataType));
     }
   }
 
@@ -165,42 +165,98 @@ public class SumAccumulator implements TableAccumulator {
     return true;
   }
 
-  private void addIntInput(Column column) {
-    int count = column.getPositionCount();
-    for (int i = 0; i < count; i++) {
-      if (!column.isNull(i)) {
-        initResult = true;
-        sumValue += column.getInt(i);
+  private void addIntInput(Column column, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      int count = column.getPositionCount();
+      for (int i = 0; i < count; i++) {
+        if (!column.isNull(i)) {
+          initResult = true;
+          sumValue += column.getInt(i);
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!column.isNull(position)) {
+          initResult = true;
+          sumValue += column.getInt(position);
+        }
       }
     }
   }
 
-  private void addLongInput(Column column) {
-    int count = column.getPositionCount();
-    for (int i = 0; i < count; i++) {
-      if (!column.isNull(i)) {
-        initResult = true;
-        sumValue += column.getLong(i);
+  private void addLongInput(Column column, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      int count = column.getPositionCount();
+      for (int i = 0; i < count; i++) {
+        if (!column.isNull(i)) {
+          initResult = true;
+          sumValue += column.getLong(i);
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!column.isNull(position)) {
+          initResult = true;
+          sumValue += column.getLong(position);
+        }
       }
     }
   }
 
-  private void addFloatInput(Column column) {
-    int count = column.getPositionCount();
-    for (int i = 0; i < count; i++) {
-      if (!column.isNull(i)) {
-        initResult = true;
-        sumValue += column.getFloat(i);
+  private void addFloatInput(Column column, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      int count = column.getPositionCount();
+      for (int i = 0; i < count; i++) {
+        if (!column.isNull(i)) {
+          initResult = true;
+          sumValue += column.getFloat(i);
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!column.isNull(position)) {
+          initResult = true;
+          sumValue += column.getFloat(position);
+        }
       }
     }
   }
 
-  private void addDoubleInput(Column column) {
-    int count = column.getPositionCount();
-    for (int i = 0; i < count; i++) {
-      if (!column.isNull(i)) {
-        initResult = true;
-        sumValue += column.getDouble(i);
+  private void addDoubleInput(Column column, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      int count = column.getPositionCount();
+      for (int i = 0; i < count; i++) {
+        if (!column.isNull(i)) {
+          initResult = true;
+          sumValue += column.getDouble(i);
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!column.isNull(position)) {
+          initResult = true;
+          sumValue += column.getDouble(position);
+        }
       }
     }
   }

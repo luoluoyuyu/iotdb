@@ -142,8 +142,8 @@ public abstract class TabletInsertionEventParser {
     final MeasurementSchema[] originMeasurementSchemaList = insertRowNode.getMeasurementSchemas();
     final String[] originColumnNameStringList = insertRowNode.getMeasurements();
     final TsTableColumnCategory[] originColumnCategories = insertRowNode.getColumnCategories();
-    final TSDataType[] originValueColumnDataTypes = insertRowNode.getDataTypes();
-    final Object[] originValueColumns = insertRowNode.getValues();
+    final TSDataType[] originValueDataTypes = insertRowNode.getDataTypes();
+    final Object[] originValues = insertRowNode.getValues();
 
     for (int i = 0; i < originColumnIndex2FilteredColumnIndexMapperList.length; i++) {
       if (originColumnIndex2FilteredColumnIndexMapperList[i] != null) {
@@ -153,13 +153,12 @@ public abstract class TabletInsertionEventParser {
         this.valueColumnTypes[filteredColumnIndex] =
             originColumnCategories != null && originColumnCategories[i] != null
                 ? originColumnCategories[i].toTsFileColumnType()
-                : Tablet.ColumnCategory.MEASUREMENT;
-        this.valueColumnDataTypes[filteredColumnIndex] = originValueColumnDataTypes[i];
+                : Tablet.ColumnCategory.FIELD;
+        this.valueColumnDataTypes[filteredColumnIndex] = originValueDataTypes[i];
         final BitMap bitMap = new BitMap(this.timestampColumn.length);
-        if (Objects.isNull(originValueColumns[i])
-            || Objects.isNull(originValueColumnDataTypes[i])) {
+        if (Objects.isNull(originValues[i]) || Objects.isNull(originValueDataTypes[i])) {
           fillNullValue(
-              originValueColumnDataTypes[i],
+              originValueDataTypes[i],
               this.valueColumns,
               bitMap,
               filteredColumnIndex,
@@ -167,8 +166,8 @@ public abstract class TabletInsertionEventParser {
         } else {
           this.valueColumns[filteredColumnIndex] =
               filterValueColumnsByRowIndexList(
-                  originValueColumnDataTypes[i],
-                  originValueColumns[i],
+                  originValueDataTypes[i],
+                  originValues[i],
                   rowIndexList,
                   true,
                   bitMap, // use the output bitmap since there is no bitmap in InsertRowNode
@@ -247,7 +246,7 @@ public abstract class TabletInsertionEventParser {
         this.valueColumnTypes[filteredColumnIndex] =
             originColumnCategories != null && originColumnCategories[i] != null
                 ? originColumnCategories[i].toTsFileColumnType()
-                : Tablet.ColumnCategory.MEASUREMENT;
+                : Tablet.ColumnCategory.FIELD;
         this.valueColumnDataTypes[filteredColumnIndex] = originValueColumnDataTypes[i];
         final BitMap bitMap = new BitMap(this.timestampColumn.length);
         if (Objects.isNull(originValueColumns[i])
@@ -295,7 +294,7 @@ public abstract class TabletInsertionEventParser {
 
     final long[] originTimestampColumn =
         Arrays.copyOf(
-            tablet.timestamps,
+            tablet.getTimestamps(),
             tablet.getRowSize()); // tablet.timestamps.length == tablet.maxRowNumber
     final List<Integer> rowIndexList = generateRowIndexList(originTimestampColumn);
     this.timestampColumn = rowIndexList.stream().mapToLong(i -> originTimestampColumn[i]).toArray();
@@ -330,18 +329,18 @@ public abstract class TabletInsertionEventParser {
       originColumnTypes[i] =
           tablet.getColumnTypes() != null && tablet.getColumnTypes().get(i) != null
               ? tablet.getColumnTypes().get(i)
-              : Tablet.ColumnCategory.MEASUREMENT;
+              : Tablet.ColumnCategory.FIELD;
       originValueColumnDataTypes[i] = originMeasurementSchemaList.get(i).getType();
     }
     final Object[] originValueColumns =
-        tablet.values; // we do not reduce value columns here by origin row size
+        tablet.getValues(); // we do not reduce value columns here by origin row size
     final BitMap[] originBitMapList =
-        tablet.bitMaps == null
+        tablet.getBitMaps() == null
             ? IntStream.range(0, originColumnSize)
                 .boxed()
                 .map(o -> new BitMap(tablet.getMaxRowNumber()))
                 .toArray(BitMap[]::new)
-            : tablet.bitMaps; // We do not reduce bitmaps here by origin row size
+            : tablet.getBitMaps(); // We do not reduce bitmaps here by origin row size
     for (int i = 0; i < originBitMapList.length; i++) {
       if (originBitMapList[i] == null) {
         originBitMapList[i] = new BitMap(tablet.getMaxRowNumber());
@@ -354,7 +353,7 @@ public abstract class TabletInsertionEventParser {
         this.measurementSchemaList[filteredColumnIndex] = originMeasurementSchemaList.get(i);
         this.columnNameStringList[filteredColumnIndex] = originColumnNameStringList[i];
         this.valueColumnTypes[filteredColumnIndex] =
-            originColumnTypes[i] != null ? originColumnTypes[i] : Tablet.ColumnCategory.MEASUREMENT;
+            originColumnTypes[i] != null ? originColumnTypes[i] : Tablet.ColumnCategory.FIELD;
         this.valueColumnDataTypes[filteredColumnIndex] = originValueColumnDataTypes[i];
         final BitMap bitMap = new BitMap(this.timestampColumn.length);
         if (Objects.isNull(originValueColumns[i])

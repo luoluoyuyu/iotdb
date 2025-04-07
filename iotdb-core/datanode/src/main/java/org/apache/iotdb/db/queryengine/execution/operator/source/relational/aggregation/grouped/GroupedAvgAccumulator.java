@@ -18,6 +18,7 @@
  */
 package org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.grouped;
 
+import org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.AggregationMask;
 import org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.grouped.array.DoubleBigArray;
 import org.apache.iotdb.db.queryengine.execution.operator.source.relational.aggregation.grouped.array.LongBigArray;
 
@@ -59,20 +60,20 @@ public class GroupedAvgAccumulator implements GroupedAccumulator {
   }
 
   @Override
-  public void addInput(int[] groupIds, Column[] arguments) {
-    checkArgument(arguments.length == 1, "argument of Avg should be one column");
+  public void addInput(int[] groupIds, Column[] arguments, AggregationMask mask) {
+    checkArgument(arguments.length == 1, "argument of AVG should be one column");
     switch (argumentDataType) {
       case INT32:
-        addIntInput(groupIds, arguments[0]);
+        addIntInput(groupIds, arguments[0], mask);
         return;
       case INT64:
-        addLongInput(groupIds, arguments[0]);
+        addLongInput(groupIds, arguments[0], mask);
         return;
       case FLOAT:
-        addFloatInput(groupIds, arguments[0]);
+        addFloatInput(groupIds, arguments[0], mask);
         return;
       case DOUBLE:
-        addDoubleInput(groupIds, arguments[0]);
+        addDoubleInput(groupIds, arguments[0], mask);
         return;
       case TEXT:
       case BLOB:
@@ -82,7 +83,7 @@ public class GroupedAvgAccumulator implements GroupedAccumulator {
       case TIMESTAMP:
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type in aggregation AVG : %s", argumentDataType));
+            String.format("Unsupported data type in AVG Aggregation: %s", argumentDataType));
     }
   }
 
@@ -92,7 +93,7 @@ public class GroupedAvgAccumulator implements GroupedAccumulator {
         argument instanceof BinaryColumn
             || (argument instanceof RunLengthEncodedColumn
                 && ((RunLengthEncodedColumn) argument).getValue() instanceof BinaryColumn),
-        "intermediate input and output of Avg should be BinaryColumn");
+        "intermediate input and output of AVG should be BinaryColumn");
 
     for (int i = 0; i < groupIds.length; i++) {
       if (!argument.isNull(i)) {
@@ -105,7 +106,7 @@ public class GroupedAvgAccumulator implements GroupedAccumulator {
   public void evaluateIntermediate(int groupId, ColumnBuilder columnBuilder) {
     checkArgument(
         columnBuilder instanceof BinaryColumnBuilder,
-        "intermediate input and output of Avg should be BinaryColumn");
+        "intermediate input and output of AVG should be BinaryColumn");
     if (countValues.get(groupId) == 0) {
       columnBuilder.appendNull();
     } else {
@@ -125,42 +126,102 @@ public class GroupedAvgAccumulator implements GroupedAccumulator {
     return bytes;
   }
 
-  private void addIntInput(int[] groupIds, Column column) {
-    int count = column.getPositionCount();
-    for (int i = 0; i < count; i++) {
-      if (!column.isNull(i)) {
-        countValues.increment(groupIds[i]);
-        sumValues.add(groupIds[i], column.getInt(i));
+  private void addIntInput(int[] groupIds, Column column, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < positionCount; i++) {
+        if (!column.isNull(i)) {
+          countValues.increment(groupIds[i]);
+          sumValues.add(groupIds[i], column.getInt(i));
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      int groupId;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        groupId = groupIds[position];
+        if (!column.isNull(position)) {
+          countValues.increment(groupId);
+          sumValues.add(groupId, column.getInt(position));
+        }
       }
     }
   }
 
-  private void addLongInput(int[] groupIds, Column column) {
-    int count = column.getPositionCount();
-    for (int i = 0; i < count; i++) {
-      if (!column.isNull(i)) {
-        countValues.increment(groupIds[i]);
-        sumValues.add(groupIds[i], column.getLong(i));
+  private void addLongInput(int[] groupIds, Column column, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < positionCount; i++) {
+        if (!column.isNull(i)) {
+          countValues.increment(groupIds[i]);
+          sumValues.add(groupIds[i], column.getLong(i));
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      int groupId;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        groupId = groupIds[position];
+        if (!column.isNull(position)) {
+          countValues.increment(groupId);
+          sumValues.add(groupId, column.getLong(position));
+        }
       }
     }
   }
 
-  private void addFloatInput(int[] groupIds, Column column) {
-    int count = column.getPositionCount();
-    for (int i = 0; i < count; i++) {
-      if (!column.isNull(i)) {
-        countValues.increment(groupIds[i]);
-        sumValues.add(groupIds[i], column.getFloat(i));
+  private void addFloatInput(int[] groupIds, Column column, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < positionCount; i++) {
+        if (!column.isNull(i)) {
+          countValues.increment(groupIds[i]);
+          sumValues.add(groupIds[i], column.getFloat(i));
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      int groupId;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        groupId = groupIds[position];
+        if (!column.isNull(position)) {
+          countValues.increment(groupId);
+          sumValues.add(groupId, column.getFloat(position));
+        }
       }
     }
   }
 
-  private void addDoubleInput(int[] groupIds, Column column) {
-    int count = column.getPositionCount();
-    for (int i = 0; i < count; i++) {
-      if (!column.isNull(i)) {
-        countValues.increment(groupIds[i]);
-        sumValues.add(groupIds[i], column.getDouble(i));
+  private void addDoubleInput(int[] groupIds, Column column, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < positionCount; i++) {
+        if (!column.isNull(i)) {
+          countValues.increment(groupIds[i]);
+          sumValues.add(groupIds[i], column.getDouble(i));
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      int groupId;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        groupId = groupIds[position];
+        if (!column.isNull(position)) {
+          countValues.increment(groupId);
+          sumValues.add(groupId, column.getDouble(position));
+        }
       }
     }
   }

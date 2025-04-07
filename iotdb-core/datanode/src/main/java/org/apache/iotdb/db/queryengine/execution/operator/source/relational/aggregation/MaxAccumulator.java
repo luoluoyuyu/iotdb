@@ -53,35 +53,35 @@ public class MaxAccumulator implements TableAccumulator {
   }
 
   @Override
-  public void addInput(Column[] arguments) {
-    checkArgument(arguments.length == 1, "argument of Max should be one column");
+  public void addInput(Column[] arguments, AggregationMask mask) {
+    checkArgument(arguments.length == 1, "argument of MAX should be one column");
 
     switch (seriesDataType) {
       case INT32:
       case DATE:
-        addIntInput(arguments[0]);
+        addIntInput(arguments[0], mask);
         return;
       case INT64:
       case TIMESTAMP:
-        addLongInput(arguments[0]);
+        addLongInput(arguments[0], mask);
         return;
       case FLOAT:
-        addFloatInput(arguments[0]);
+        addFloatInput(arguments[0], mask);
         return;
       case DOUBLE:
-        addDoubleInput(arguments[0]);
+        addDoubleInput(arguments[0], mask);
         return;
       case TEXT:
       case STRING:
       case BLOB:
-        addBinaryInput(arguments[0]);
+        addBinaryInput(arguments[0], mask);
         return;
       case BOOLEAN:
-        addBooleanInput(arguments[0]);
+        addBooleanInput(arguments[0], mask);
         return;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type in LastValue: %s", seriesDataType));
+            String.format("Unsupported data type in MAX Aggregation: %s", seriesDataType));
     }
   }
 
@@ -117,7 +117,7 @@ public class MaxAccumulator implements TableAccumulator {
           break;
         default:
           throw new UnSupportedDataTypeException(
-              String.format("Unsupported data type in Max Aggregation: %s", seriesDataType));
+              String.format("Unsupported data type in MAX Aggregation: %s", seriesDataType));
       }
     }
   }
@@ -154,7 +154,7 @@ public class MaxAccumulator implements TableAccumulator {
         break;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type in Max Aggregation: %s", seriesDataType));
+            String.format("Unsupported data type in MAX Aggregation: %s", seriesDataType));
     }
   }
 
@@ -189,7 +189,7 @@ public class MaxAccumulator implements TableAccumulator {
         break;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type in MaxAggregation: %s", seriesDataType));
+            String.format("Unsupported data type in MAX Aggregation: %s", seriesDataType));
     }
   }
 
@@ -230,7 +230,7 @@ public class MaxAccumulator implements TableAccumulator {
         break;
       default:
         throw new UnSupportedDataTypeException(
-            String.format("Unsupported data type in Last Aggregation: %s", seriesDataType));
+            String.format("Unsupported data type in MAX Aggregation: %s", seriesDataType));
     }
   }
 
@@ -240,10 +240,23 @@ public class MaxAccumulator implements TableAccumulator {
     this.maxResult.reset();
   }
 
-  private void addIntInput(Column valueColumn) {
-    for (int i = 0; i < valueColumn.getPositionCount(); i++) {
-      if (!valueColumn.isNull(i)) {
-        updateIntMaxValue(valueColumn.getInt(i));
+  private void addIntInput(Column valueColumn, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < valueColumn.getPositionCount(); i++) {
+        if (!valueColumn.isNull(i)) {
+          updateIntMaxValue(valueColumn.getInt(i));
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!valueColumn.isNull(position)) {
+          updateIntMaxValue(valueColumn.getInt(position));
+        }
       }
     }
   }
@@ -255,10 +268,23 @@ public class MaxAccumulator implements TableAccumulator {
     }
   }
 
-  private void addLongInput(Column valueColumn) {
-    for (int i = 0; i < valueColumn.getPositionCount(); i++) {
-      if (!valueColumn.isNull(i)) {
-        updateLongMaxValue(valueColumn.getLong(i));
+  private void addLongInput(Column valueColumn, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < valueColumn.getPositionCount(); i++) {
+        if (!valueColumn.isNull(i)) {
+          updateLongMaxValue(valueColumn.getLong(i));
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!valueColumn.isNull(position)) {
+          updateLongMaxValue(valueColumn.getLong(position));
+        }
       }
     }
   }
@@ -270,10 +296,23 @@ public class MaxAccumulator implements TableAccumulator {
     }
   }
 
-  private void addFloatInput(Column valueColumn) {
-    for (int i = 0; i < valueColumn.getPositionCount(); i++) {
-      if (!valueColumn.isNull(i)) {
-        updateFloatMaxValue(valueColumn.getFloat(i));
+  private void addFloatInput(Column valueColumn, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < valueColumn.getPositionCount(); i++) {
+        if (!valueColumn.isNull(i)) {
+          updateFloatMaxValue(valueColumn.getFloat(i));
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!valueColumn.isNull(position)) {
+          updateFloatMaxValue(valueColumn.getFloat(position));
+        }
       }
     }
   }
@@ -285,10 +324,23 @@ public class MaxAccumulator implements TableAccumulator {
     }
   }
 
-  private void addDoubleInput(Column valueColumn) {
-    for (int i = 0; i < valueColumn.getPositionCount(); i++) {
-      if (!valueColumn.isNull(i)) {
-        updateDoubleMaxValue(valueColumn.getDouble(i));
+  private void addDoubleInput(Column valueColumn, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < valueColumn.getPositionCount(); i++) {
+        if (!valueColumn.isNull(i)) {
+          updateDoubleMaxValue(valueColumn.getDouble(i));
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!valueColumn.isNull(position)) {
+          updateDoubleMaxValue(valueColumn.getDouble(position));
+        }
       }
     }
   }
@@ -300,10 +352,23 @@ public class MaxAccumulator implements TableAccumulator {
     }
   }
 
-  private void addBinaryInput(Column valueColumn) {
-    for (int i = 0; i < valueColumn.getPositionCount(); i++) {
-      if (!valueColumn.isNull(i)) {
-        updateBinaryMaxValue(valueColumn.getBinary(i));
+  private void addBinaryInput(Column valueColumn, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < valueColumn.getPositionCount(); i++) {
+        if (!valueColumn.isNull(i)) {
+          updateBinaryMaxValue(valueColumn.getBinary(i));
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!valueColumn.isNull(position)) {
+          updateBinaryMaxValue(valueColumn.getBinary(position));
+        }
       }
     }
   }
@@ -315,10 +380,23 @@ public class MaxAccumulator implements TableAccumulator {
     }
   }
 
-  private void addBooleanInput(Column valueColumn) {
-    for (int i = 0; i < valueColumn.getPositionCount(); i++) {
-      if (!valueColumn.isNull(i)) {
-        updateBooleanMaxValue(valueColumn.getBoolean(i));
+  private void addBooleanInput(Column valueColumn, AggregationMask mask) {
+    int positionCount = mask.getSelectedPositionCount();
+
+    if (mask.isSelectAll()) {
+      for (int i = 0; i < valueColumn.getPositionCount(); i++) {
+        if (!valueColumn.isNull(i)) {
+          updateBooleanMaxValue(valueColumn.getBoolean(i));
+        }
+      }
+    } else {
+      int[] selectedPositions = mask.getSelectedPositions();
+      int position;
+      for (int i = 0; i < positionCount; i++) {
+        position = selectedPositions[i];
+        if (!valueColumn.isNull(position)) {
+          updateBooleanMaxValue(valueColumn.getBoolean(position));
+        }
       }
     }
   }

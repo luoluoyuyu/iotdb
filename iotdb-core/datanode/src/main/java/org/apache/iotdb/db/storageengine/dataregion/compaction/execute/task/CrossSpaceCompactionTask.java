@@ -185,13 +185,15 @@ public class CrossSpaceCompactionTask extends AbstractCompactionTask {
         compactionLogger.logSourceFiles(selectedUnsequenceFiles);
         compactionLogger.logTargetFiles(targetTsfileResourceList);
         compactionLogger.force();
+        CompactionUtils.prepareCompactionModFiles(
+            targetTsfileResourceList, selectedSequenceFiles, selectedUnsequenceFiles);
 
         performer.setSourceFiles(selectedSequenceFiles, selectedUnsequenceFiles);
         performer.setTargetFiles(targetTsfileResourceList);
         performer.setSummary(summary);
         performer.perform();
 
-        CompactionUtils.updateProgressIndex(
+        CompactionUtils.updateProgressIndexAndMark(
             targetTsfileResourceList, selectedSequenceFiles, selectedUnsequenceFiles);
         CompactionUtils.moveTargetFile(
             targetTsfileResourceList,

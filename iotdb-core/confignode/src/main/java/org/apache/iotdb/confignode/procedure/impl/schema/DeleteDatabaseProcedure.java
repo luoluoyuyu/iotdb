@@ -197,7 +197,9 @@ public class DeleteDatabaseProcedure
           env.getConfigManager()
               .getLoadManager()
               .clearDataPartitionPolicyTable(deleteDatabaseSchema.getName());
-          LOG.info("data partition policy table cleared.");
+          LOG.info(
+              "[DeleteDatabaseProcedure] The data partition policy table of database: {} is cleared.",
+              deleteDatabaseSchema.getName());
 
           // Delete Database metrics
           PartitionMetrics.unbindDatabaseRelatedMetricsWhenUpdate(
@@ -309,7 +311,7 @@ public class DeleteDatabaseProcedure
   @Override
   public boolean equals(final Object that) {
     if (that instanceof DeleteDatabaseProcedure) {
-      DeleteDatabaseProcedure thatProc = (DeleteDatabaseProcedure) that;
+      final DeleteDatabaseProcedure thatProc = (DeleteDatabaseProcedure) that;
       return thatProc.getProcId() == this.getProcId()
           && thatProc.getCurrentState().equals(this.getCurrentState())
           && thatProc.getCycles() == this.getCycles()

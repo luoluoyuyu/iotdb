@@ -40,8 +40,10 @@ import org.apache.iotdb.confignode.conf.ConfigNodeConfig;
 import org.apache.iotdb.confignode.conf.ConfigNodeDescriptor;
 import org.apache.iotdb.confignode.consensus.request.read.database.CountDatabasePlan;
 import org.apache.iotdb.confignode.consensus.request.read.database.GetDatabasePlan;
+import org.apache.iotdb.confignode.consensus.request.read.table.DescTable4InformationSchemaPlan;
 import org.apache.iotdb.confignode.consensus.request.read.table.DescTablePlan;
 import org.apache.iotdb.confignode.consensus.request.read.table.FetchTablePlan;
+import org.apache.iotdb.confignode.consensus.request.read.table.ShowTable4InformationSchemaPlan;
 import org.apache.iotdb.confignode.consensus.request.read.table.ShowTablePlan;
 import org.apache.iotdb.confignode.consensus.request.read.template.GetAllSchemaTemplatePlan;
 import org.apache.iotdb.confignode.consensus.request.read.template.GetAllTemplateSetInfoPlan;
@@ -57,6 +59,8 @@ import org.apache.iotdb.confignode.consensus.request.write.database.SetTimeParti
 import org.apache.iotdb.confignode.consensus.request.write.pipe.payload.PipeEnrichedPlan;
 import org.apache.iotdb.confignode.consensus.request.write.table.AddTableColumnPlan;
 import org.apache.iotdb.confignode.consensus.request.write.table.RenameTableColumnPlan;
+import org.apache.iotdb.confignode.consensus.request.write.table.SetTableColumnCommentPlan;
+import org.apache.iotdb.confignode.consensus.request.write.table.SetTableCommentPlan;
 import org.apache.iotdb.confignode.consensus.request.write.table.SetTablePropertiesPlan;
 import org.apache.iotdb.confignode.consensus.request.write.template.CreateSchemaTemplatePlan;
 import org.apache.iotdb.confignode.consensus.request.write.template.DropSchemaTemplatePlan;
@@ -67,8 +71,10 @@ import org.apache.iotdb.confignode.consensus.request.write.template.UnsetSchemaT
 import org.apache.iotdb.confignode.consensus.response.database.CountDatabaseResp;
 import org.apache.iotdb.confignode.consensus.response.database.DatabaseSchemaResp;
 import org.apache.iotdb.confignode.consensus.response.partition.PathInfoResp;
+import org.apache.iotdb.confignode.consensus.response.table.DescTable4InformationSchemaResp;
 import org.apache.iotdb.confignode.consensus.response.table.DescTableResp;
 import org.apache.iotdb.confignode.consensus.response.table.FetchTableResp;
+import org.apache.iotdb.confignode.consensus.response.table.ShowTable4InformationSchemaResp;
 import org.apache.iotdb.confignode.consensus.response.table.ShowTableResp;
 import org.apache.iotdb.confignode.consensus.response.template.AllTemplateSetInfoResp;
 import org.apache.iotdb.confignode.consensus.response.template.TemplateInfoResp;
@@ -82,12 +88,14 @@ import org.apache.iotdb.confignode.manager.partition.PartitionMetrics;
 import org.apache.iotdb.confignode.persistence.schema.ClusterSchemaInfo;
 import org.apache.iotdb.confignode.rpc.thrift.TDatabaseInfo;
 import org.apache.iotdb.confignode.rpc.thrift.TDatabaseSchema;
+import org.apache.iotdb.confignode.rpc.thrift.TDescTable4InformationSchemaResp;
 import org.apache.iotdb.confignode.rpc.thrift.TDescTableResp;
 import org.apache.iotdb.confignode.rpc.thrift.TFetchTableResp;
 import org.apache.iotdb.confignode.rpc.thrift.TGetAllTemplatesResp;
 import org.apache.iotdb.confignode.rpc.thrift.TGetPathsSetTemplatesResp;
 import org.apache.iotdb.confignode.rpc.thrift.TGetTemplateResp;
 import org.apache.iotdb.confignode.rpc.thrift.TShowDatabaseResp;
+import org.apache.iotdb.confignode.rpc.thrift.TShowTable4InformationSchemaResp;
 import org.apache.iotdb.confignode.rpc.thrift.TShowTableResp;
 import org.apache.iotdb.consensus.exception.ConsensusException;
 import org.apache.iotdb.db.schemaengine.template.Template;
@@ -99,6 +107,7 @@ import org.apache.iotdb.mpp.rpc.thrift.TUpdateTemplateReq;
 import org.apache.iotdb.rpc.RpcUtils;
 import org.apache.iotdb.rpc.TSStatusCode;
 
+import org.apache.tsfile.annotations.TableModel;
 import org.apache.tsfile.file.metadata.IDeviceID;
 import org.apache.tsfile.utils.Pair;
 import org.slf4j.Logger;
@@ -114,8 +123,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
-
-import static org.apache.iotdb.commons.schema.SchemaConstant.ROOT;
 
 /** The ClusterSchemaManager Manages cluster schemaengine read and write requests. */
 public class ClusterSchemaManager {
@@ -138,9 +145,9 @@ public class ClusterSchemaManager {
       "Failed in the write API executing the consensus layer due to: ";
 
   public ClusterSchemaManager(
-      IManager configManager,
-      ClusterSchemaInfo clusterSchemaInfo,
-      ClusterSchemaQuotaStatistics schemaQuotaStatistics) {
+      final IManager configManager,
+      final ClusterSchemaInfo clusterSchemaInfo,
+      final ClusterSchemaQuotaStatistics schemaQuotaStatistics) {
     this.configManager = configManager;
     this.clusterSchemaInfo = clusterSchemaInfo;
     this.schemaQuotaStatistics = schemaQuotaStatistics;
@@ -155,17 +162,18 @@ public class ClusterSchemaManager {
       final DatabaseSchemaPlan databaseSchemaPlan, final boolean isGeneratedByPipe) {
     TSStatus result;
 
-    if (getPartitionManager().isDatabasePreDeleted(databaseSchemaPlan.getSchema().getName())) {
+    final TDatabaseSchema schema = databaseSchemaPlan.getSchema();
+    if (getPartitionManager().isDatabasePreDeleted(schema.getName())) {
       return RpcUtils.getStatus(
           TSStatusCode.METADATA_ERROR,
-          String.format(
-              "Some other task is deleting database %s", databaseSchemaPlan.getSchema().getName()));
+          String.format("Some other task is deleting database %s", schema.getName()));
     }
 
     createDatabaseLock.lock();
     try {
-      clusterSchemaInfo.isDatabaseNameValid(databaseSchemaPlan.getSchema().getName());
-      if (!databaseSchemaPlan.getSchema().getName().equals(SchemaConstant.SYSTEM_DATABASE)) {
+      clusterSchemaInfo.isDatabaseNameValid(
+          schema.getName(), schema.isSetIsTableModel() && schema.isIsTableModel());
+      if (!schema.getName().equals(SchemaConstant.SYSTEM_DATABASE)) {
         clusterSchemaInfo.checkDatabaseLimit();
       }
       // Cache DatabaseSchema
@@ -176,16 +184,16 @@ public class ClusterSchemaManager {
                       ? new PipeEnrichedPlan(databaseSchemaPlan)
                       : databaseSchemaPlan);
       // set ttl
-      if (databaseSchemaPlan.getSchema().isSetTTL()) {
+      if (schema.isSetTTL()) {
         result = configManager.getTTLManager().setTTL(databaseSchemaPlan, isGeneratedByPipe);
       }
       // Bind Database metrics
       PartitionMetrics.bindDatabaseRelatedMetricsWhenUpdate(
           MetricService.getInstance(),
           configManager,
-          databaseSchemaPlan.getSchema().getName(),
-          databaseSchemaPlan.getSchema().getDataReplicationFactor(),
-          databaseSchemaPlan.getSchema().getSchemaReplicationFactor());
+          schema.getName(),
+          schema.getDataReplicationFactor(),
+          schema.getSchemaReplicationFactor());
       // Adjust the maximum RegionGroup number of each Database
       adjustMaxRegionGroupNum();
     } catch (final ConsensusException e) {
@@ -269,7 +277,8 @@ public class ClusterSchemaManager {
   }
 
   /** Delete DatabaseSchema. */
-  public TSStatus deleteDatabase(DeleteDatabasePlan deleteDatabasePlan, boolean isGeneratedByPipe) {
+  public TSStatus deleteDatabase(
+      final DeleteDatabasePlan deleteDatabasePlan, final boolean isGeneratedByPipe) {
     TSStatus result;
     try {
       result =
@@ -278,7 +287,7 @@ public class ClusterSchemaManager {
                   isGeneratedByPipe
                       ? new PipeEnrichedPlan(deleteDatabasePlan)
                       : deleteDatabasePlan);
-    } catch (ConsensusException e) {
+    } catch (final ConsensusException e) {
       LOGGER.warn(CONSENSUS_WRITE_ERROR, e);
       result = new TSStatus(TSStatusCode.EXECUTE_STATEMENT_ERROR.getStatusCode());
       result.setMessage(e.getMessage());
@@ -296,14 +305,14 @@ public class ClusterSchemaManager {
    *
    * @return CountDatabaseResp
    */
-  public CountDatabaseResp countMatchedDatabases(CountDatabasePlan countDatabasePlan) {
+  public CountDatabaseResp countMatchedDatabases(final CountDatabasePlan countDatabasePlan) {
     try {
       return (CountDatabaseResp) getConsensusManager().read(countDatabasePlan);
-    } catch (ConsensusException e) {
+    } catch (final ConsensusException e) {
       LOGGER.warn(CONSENSUS_READ_ERROR, e);
-      TSStatus res = new TSStatus(TSStatusCode.EXECUTE_STATEMENT_ERROR.getStatusCode());
+      final TSStatus res = new TSStatus(TSStatusCode.EXECUTE_STATEMENT_ERROR.getStatusCode());
       res.setMessage(e.getMessage());
-      CountDatabaseResp response = new CountDatabaseResp();
+      final CountDatabaseResp response = new CountDatabaseResp();
       response.setStatus(res);
       return response;
     }
@@ -374,7 +383,6 @@ public class ClusterSchemaManager {
           getMinRegionGroupNum(database, TConsensusGroupType.DataRegion));
       databaseInfo.setMaxDataRegionNum(
           getMaxRegionGroupNum(database, TConsensusGroupType.DataRegion));
-      databaseInfo.setIsTableModel(databaseSchema.isIsTableModel());
 
       try {
         databaseInfo.setSchemaRegionNum(
@@ -396,17 +404,17 @@ public class ClusterSchemaManager {
   }
 
   public Map<String, Long> getTTLInfoForUpgrading() {
-    List<String> databases = getDatabaseNames(null);
-    Map<String, Long> infoMap = new ConcurrentHashMap<>();
-    for (String database : databases) {
+    final List<String> databases = getDatabaseNames(false);
+    final Map<String, Long> infoMap = new ConcurrentHashMap<>();
+    for (final String database : databases) {
       try {
         final TDatabaseSchema databaseSchema = getDatabaseSchemaByName(database);
-        long ttl = databaseSchema.isSetTTL() ? databaseSchema.getTTL() : -1;
+        final long ttl = databaseSchema.isSetTTL() ? databaseSchema.getTTL() : -1;
         if (ttl < 0 || ttl == Long.MAX_VALUE) {
           continue;
         }
         infoMap.put(database, ttl);
-      } catch (DatabaseNotExistsException e) {
+      } catch (final DatabaseNotExistsException e) {
         LOGGER.warn("Database: {} doesn't exist", databases, e);
       }
     }
@@ -458,18 +466,18 @@ public class ClusterSchemaManager {
    */
   public synchronized void adjustMaxRegionGroupNum() {
     // Get all DatabaseSchemas
-    Map<String, TDatabaseSchema> databaseSchemaMap =
-        getMatchedDatabaseSchemasByName(getDatabaseNames(null));
+    final Map<String, TDatabaseSchema> databaseSchemaMap =
+        getMatchedDatabaseSchemasByName(getDatabaseNames(null), null);
     if (databaseSchemaMap.isEmpty()) {
       // Skip when there are no Databases
       return;
     }
 
-    int dataNodeNum = getNodeManager().getRegisteredDataNodeCount();
-    int totalCpuCoreNum = getNodeManager().getDataNodeCpuCoreCount();
+    final int dataNodeNum = getNodeManager().getRegisteredDataNodeCount();
+    final int totalCpuCoreNum = getNodeManager().getDataNodeCpuCoreCount();
     int databaseNum = databaseSchemaMap.size();
 
-    for (TDatabaseSchema databaseSchema : databaseSchemaMap.values()) {
+    for (final TDatabaseSchema databaseSchema : databaseSchemaMap.values()) {
       if (!isDatabaseExist(databaseSchema.getName())
           || databaseSchema.getName().equals(SchemaConstant.SYSTEM_DATABASE)) {
         // filter the pre deleted database and the system database
@@ -477,70 +485,74 @@ public class ClusterSchemaManager {
       }
     }
 
-    AdjustMaxRegionGroupNumPlan adjustMaxRegionGroupNumPlan = new AdjustMaxRegionGroupNumPlan();
-    for (TDatabaseSchema databaseSchema : databaseSchemaMap.values()) {
+    final AdjustMaxRegionGroupNumPlan adjustMaxRegionGroupNumPlan =
+        new AdjustMaxRegionGroupNumPlan();
+    for (final TDatabaseSchema databaseSchema : databaseSchemaMap.values()) {
       if (databaseSchema.getName().equals(SchemaConstant.SYSTEM_DATABASE)) {
         // filter the system database
         continue;
       }
 
+      // Adjust maxSchemaRegionGroupNum for each Database.
+      // All Databases share the DataNodes equally.
+      // The allocated SchemaRegionGroups will not be shrunk.
+      final int allocatedSchemaRegionGroupCount;
       try {
-        // Adjust maxSchemaRegionGroupNum for each Database.
-        // All Databases share the DataNodes equally.
-        // The allocated SchemaRegionGroups will not be shrunk.
-        int allocatedSchemaRegionGroupCount;
-        try {
-          allocatedSchemaRegionGroupCount =
-              getPartitionManager()
-                  .getRegionGroupCount(databaseSchema.getName(), TConsensusGroupType.SchemaRegion);
-        } catch (DatabaseNotExistsException e) {
-          // ignore the pre deleted database
-          continue;
-        }
+        allocatedSchemaRegionGroupCount =
+            getPartitionManager()
+                .getRegionGroupCount(databaseSchema.getName(), TConsensusGroupType.SchemaRegion);
+      } catch (final DatabaseNotExistsException e) {
+        // ignore the pre deleted database
+        continue;
+      }
 
-        int maxSchemaRegionGroupNum =
-            calcMaxRegionGroupNum(
-                databaseSchema.getMinSchemaRegionGroupNum(),
-                SCHEMA_REGION_PER_DATA_NODE,
-                dataNodeNum,
-                databaseNum,
-                databaseSchema.getSchemaReplicationFactor(),
-                allocatedSchemaRegionGroupCount);
-        LOGGER.info(
-            "[AdjustRegionGroupNum] The maximum number of SchemaRegionGroups for Database: {} is adjusted to: {}",
-            databaseSchema.getName(),
-            maxSchemaRegionGroupNum);
+      final int maxSchemaRegionGroupNum =
+          calcMaxRegionGroupNum(
+              databaseSchema.getMinSchemaRegionGroupNum(),
+              SCHEMA_REGION_PER_DATA_NODE,
+              dataNodeNum,
+              databaseNum,
+              databaseSchema.getSchemaReplicationFactor(),
+              allocatedSchemaRegionGroupCount);
+      LOGGER.info(
+          "[AdjustRegionGroupNum] The maximum number of SchemaRegionGroups for Database: {} is adjusted to: {}",
+          databaseSchema.getName(),
+          maxSchemaRegionGroupNum);
 
-        // Adjust maxDataRegionGroupNum for each Database.
-        // All Databases share the DataNodes equally.
-        // The allocated DataRegionGroups will not be shrunk.
-        int allocatedDataRegionGroupCount =
+      // Adjust maxDataRegionGroupNum for each Database.
+      // All Databases share the DataNodes equally.
+      // The allocated DataRegionGroups will not be shrunk.
+      final int allocatedDataRegionGroupCount;
+      try {
+        allocatedDataRegionGroupCount =
             getPartitionManager()
                 .getRegionGroupCount(databaseSchema.getName(), TConsensusGroupType.DataRegion);
-        int maxDataRegionGroupNum =
-            calcMaxRegionGroupNum(
-                databaseSchema.getMinDataRegionGroupNum(),
-                DATA_REGION_PER_DATA_NODE == 0
-                    ? CONF.getDataRegionPerDataNodeProportion()
-                    : DATA_REGION_PER_DATA_NODE,
-                DATA_REGION_PER_DATA_NODE == 0 ? totalCpuCoreNum : dataNodeNum,
-                databaseNum,
-                databaseSchema.getDataReplicationFactor(),
-                allocatedDataRegionGroupCount);
-        LOGGER.info(
-            "[AdjustRegionGroupNum] The maximum number of DataRegionGroups for Database: {} is adjusted to: {}",
-            databaseSchema.getName(),
-            maxDataRegionGroupNum);
-
-        adjustMaxRegionGroupNumPlan.putEntry(
-            databaseSchema.getName(), new Pair<>(maxSchemaRegionGroupNum, maxDataRegionGroupNum));
-      } catch (DatabaseNotExistsException e) {
-        LOGGER.warn("Adjust maxRegionGroupNum failed because Database doesn't exist", e);
+      } catch (final DatabaseNotExistsException e) {
+        // ignore the pre deleted database
+        continue;
       }
+
+      final int maxDataRegionGroupNum =
+          calcMaxRegionGroupNum(
+              databaseSchema.getMinDataRegionGroupNum(),
+              DATA_REGION_PER_DATA_NODE == 0
+                  ? CONF.getDataRegionPerDataNodeProportion()
+                  : DATA_REGION_PER_DATA_NODE,
+              DATA_REGION_PER_DATA_NODE == 0 ? totalCpuCoreNum : dataNodeNum,
+              databaseNum,
+              databaseSchema.getDataReplicationFactor(),
+              allocatedDataRegionGroupCount);
+      LOGGER.info(
+          "[AdjustRegionGroupNum] The maximum number of DataRegionGroups for Database: {} is adjusted to: {}",
+          databaseSchema.getName(),
+          maxDataRegionGroupNum);
+
+      adjustMaxRegionGroupNumPlan.putEntry(
+          databaseSchema.getName(), new Pair<>(maxSchemaRegionGroupNum, maxDataRegionGroupNum));
     }
     try {
       getConsensusManager().write(adjustMaxRegionGroupNumPlan);
-    } catch (ConsensusException e) {
+    } catch (final ConsensusException e) {
       LOGGER.warn(CONSENSUS_WRITE_ERROR, e);
     }
   }
@@ -577,16 +589,18 @@ public class ClusterSchemaManager {
    * @param database The specified Database
    * @return True if the DatabaseSchema exists and the Database is not pre-deleted
    */
-  public boolean isDatabaseExist(String database) {
+  public boolean isDatabaseExist(final String database) {
     return getPartitionManager().isDatabaseExist(database);
   }
 
   /**
-   * Only leader use this interface. Get all Databases name
+   * Only leader use this interface. Get all the databases' names under the specific model. For some
+   * common services on configNode, the input shall be {@code null} to extract the databases from
+   * both models.
    *
    * @param isTableModel {@link Boolean#TRUE} is only extract table model database, {@link
    *     Boolean#FALSE} is only extract tree model database, {@code null} is extract both.
-   * @return List<DatabaseName>, all Databases' name
+   * @return List{@literal <}DatabaseName{@literal >}, all Databases' name
    */
   public List<String> getDatabaseNames(final Boolean isTableModel) {
     return clusterSchemaInfo.getDatabaseNames(isTableModel).stream()
@@ -601,7 +615,7 @@ public class ClusterSchemaManager {
    * @return The specific DatabaseSchema
    * @throws DatabaseNotExistsException When the specific Database doesn't exist
    */
-  public TDatabaseSchema getDatabaseSchemaByName(String database)
+  public TDatabaseSchema getDatabaseSchemaByName(final String database)
       throws DatabaseNotExistsException {
     if (!isDatabaseExist(database)) {
       throw new DatabaseNotExistsException(database);
@@ -631,13 +645,13 @@ public class ClusterSchemaManager {
    * @return the matched DatabaseSchemas
    */
   public Map<String, TDatabaseSchema> getMatchedDatabaseSchemasByName(
-      final List<String> rawPathList) {
+      final List<String> rawPathList, final Boolean isTableModel) {
     final Map<String, TDatabaseSchema> result = new ConcurrentHashMap<>();
     clusterSchemaInfo
-        .getMatchedDatabaseSchemasByName(rawPathList)
+        .getMatchedDatabaseSchemasByName(rawPathList, isTableModel)
         .forEach(
             (database, databaseSchema) -> {
-              if (isDatabaseExist(database)) {
+              if (isDatabaseExist(databaseSchema.getName())) {
                 result.put(database, databaseSchema);
               }
             });
@@ -921,7 +935,6 @@ public class ClusterSchemaManager {
   }
 
   public synchronized TSStatus dropSchemaTemplate(String templateName) {
-
     // check template existence
     GetSchemaTemplatePlan getSchemaTemplatePlan = new GetSchemaTemplatePlan(templateName);
     TemplateInfoResp templateInfoResp;
@@ -1090,6 +1103,19 @@ public class ClusterSchemaManager {
     }
   }
 
+  public TShowTable4InformationSchemaResp showTables4InformationSchema() {
+    try {
+      return ((ShowTable4InformationSchemaResp)
+              configManager.getConsensusManager().read(new ShowTable4InformationSchemaPlan()))
+          .convertToTShowTable4InformationSchemaResp();
+    } catch (final ConsensusException e) {
+      LOGGER.warn("Failed in the read API executing the consensus layer due to: ", e);
+      final TSStatus res = new TSStatus(TSStatusCode.EXECUTE_STATEMENT_ERROR.getStatusCode());
+      res.setMessage(e.getMessage());
+      return new TShowTable4InformationSchemaResp(res);
+    }
+  }
+
   public TDescTableResp describeTable(
       final String database, final String tableName, final boolean isDetails) {
     try {
@@ -1103,6 +1129,19 @@ public class ClusterSchemaManager {
       final TSStatus res = new TSStatus(TSStatusCode.EXECUTE_STATEMENT_ERROR.getStatusCode());
       res.setMessage(e.getMessage());
       return new TDescTableResp(res);
+    }
+  }
+
+  public TDescTable4InformationSchemaResp describeTables4InformationSchema() {
+    try {
+      return ((DescTable4InformationSchemaResp)
+              configManager.getConsensusManager().read(new DescTable4InformationSchemaPlan()))
+          .convertToTDescTable4InformationSchemaResp();
+    } catch (final ConsensusException e) {
+      LOGGER.warn("Failed in the read API executing the consensus layer due to: ", e);
+      final TSStatus res = new TSStatus(TSStatusCode.EXECUTE_STATEMENT_ERROR.getStatusCode());
+      res.setMessage(e.getMessage());
+      return new TDescTable4InformationSchemaResp(res);
     }
   }
 
@@ -1174,9 +1213,7 @@ public class ClusterSchemaManager {
       return new Pair<>(
           RpcUtils.getStatus(
               TSStatusCode.TABLE_NOT_EXISTS,
-              String.format(
-                  "Table '%s.%s' does not exist",
-                  database.substring(ROOT.length() + 1), tableName)),
+              String.format("Table '%s.%s' does not exist", database, tableName)),
           null);
     }
 
@@ -1212,9 +1249,7 @@ public class ClusterSchemaManager {
       return new Pair<>(
           RpcUtils.getStatus(
               TSStatusCode.TABLE_NOT_EXISTS,
-              String.format(
-                  "Table '%s.%s' does not exist",
-                  database.substring(ROOT.length() + 1), tableName)),
+              String.format("Table '%s.%s' does not exist", database, tableName)),
           null);
     }
 
@@ -1245,11 +1280,13 @@ public class ClusterSchemaManager {
   public synchronized TSStatus addTableColumn(
       final String database,
       final String tableName,
-      final List<TsTableColumnSchema> columnSchemaList) {
+      final List<TsTableColumnSchema> columnSchemaList,
+      final boolean isGeneratedByPipe) {
     final AddTableColumnPlan addTableColumnPlan =
         new AddTableColumnPlan(database, tableName, columnSchemaList, false);
     try {
-      return getConsensusManager().write(addTableColumnPlan);
+      return getConsensusManager()
+          .write(isGeneratedByPipe ? new PipeEnrichedPlan(addTableColumnPlan) : addTableColumnPlan);
     } catch (final ConsensusException e) {
       LOGGER.warn(e.getMessage(), e);
       return RpcUtils.getStatus(TSStatusCode.INTERNAL_SERVER_ERROR, e.getMessage());
@@ -1271,11 +1308,19 @@ public class ClusterSchemaManager {
   }
 
   public synchronized TSStatus renameTableColumn(
-      final String database, final String tableName, final String oldName, final String newName) {
+      final String database,
+      final String tableName,
+      final String oldName,
+      final String newName,
+      final boolean isGeneratedByPipe) {
     final RenameTableColumnPlan renameTableColumnPlan =
         new RenameTableColumnPlan(database, tableName, oldName, newName);
     try {
-      return getConsensusManager().write(renameTableColumnPlan);
+      return getConsensusManager()
+          .write(
+              isGeneratedByPipe
+                  ? new PipeEnrichedPlan(renameTableColumnPlan)
+                  : renameTableColumnPlan);
     } catch (final ConsensusException e) {
       LOGGER.warn(e.getMessage(), e);
       return RpcUtils.getStatus(TSStatusCode.INTERNAL_SERVER_ERROR, e.getMessage());
@@ -1283,11 +1328,55 @@ public class ClusterSchemaManager {
   }
 
   public synchronized TSStatus setTableProperties(
-      final String database, final String tableName, final Map<String, String> properties) {
+      final String database,
+      final String tableName,
+      final Map<String, String> properties,
+      final boolean isGeneratedByPipe) {
     final SetTablePropertiesPlan setTablePropertiesPlan =
         new SetTablePropertiesPlan(database, tableName, properties);
     try {
-      return getConsensusManager().write(setTablePropertiesPlan);
+      return getConsensusManager()
+          .write(
+              isGeneratedByPipe
+                  ? new PipeEnrichedPlan(setTablePropertiesPlan)
+                  : setTablePropertiesPlan);
+    } catch (final ConsensusException e) {
+      LOGGER.warn(e.getMessage(), e);
+      return RpcUtils.getStatus(TSStatusCode.INTERNAL_SERVER_ERROR, e.getMessage());
+    }
+  }
+
+  public synchronized TSStatus setTableComment(
+      final String database,
+      final String tableName,
+      final String comment,
+      final boolean isGeneratedByPipe) {
+    final SetTableCommentPlan setTableCommentPlan =
+        new SetTableCommentPlan(database, tableName, comment);
+    try {
+      return getConsensusManager()
+          .write(
+              isGeneratedByPipe ? new PipeEnrichedPlan(setTableCommentPlan) : setTableCommentPlan);
+    } catch (final ConsensusException e) {
+      LOGGER.warn(e.getMessage(), e);
+      return RpcUtils.getStatus(TSStatusCode.INTERNAL_SERVER_ERROR, e.getMessage());
+    }
+  }
+
+  public synchronized TSStatus setTableColumnComment(
+      final String database,
+      final String tableName,
+      final String columnName,
+      final String comment,
+      final boolean isGeneratedByPipe) {
+    final SetTableColumnCommentPlan setTableColumnCommentPlan =
+        new SetTableColumnCommentPlan(database, tableName, columnName, comment);
+    try {
+      return getConsensusManager()
+          .write(
+              isGeneratedByPipe
+                  ? new PipeEnrichedPlan(setTableColumnCommentPlan)
+                  : setTableColumnCommentPlan);
     } catch (final ConsensusException e) {
       LOGGER.warn(e.getMessage(), e);
       return RpcUtils.getStatus(TSStatusCode.INTERNAL_SERVER_ERROR, e.getMessage());
@@ -1306,9 +1395,7 @@ public class ClusterSchemaManager {
       return new Pair<>(
           RpcUtils.getStatus(
               TSStatusCode.TABLE_NOT_EXISTS,
-              String.format(
-                  "Table '%s.%s' does not exist",
-                  database.substring(ROOT.length() + 1), tableName)),
+              String.format("Table '%s.%s' does not exist", database, tableName)),
           null);
     }
 
@@ -1334,6 +1421,11 @@ public class ClusterSchemaManager {
         });
 
     return new Pair<>(RpcUtils.SUCCESS_STATUS, updatedTable);
+  }
+
+  @TableModel
+  public long getDatabaseMaxTTL(final String database) {
+    return clusterSchemaInfo.getDatabaseMaxTTL(database);
   }
 
   public void clearSchemaQuotaCache() {

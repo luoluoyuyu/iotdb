@@ -23,12 +23,13 @@ import org.apache.iotdb.commons.exception.IllegalPathException;
 import org.apache.iotdb.commons.path.PartialPath;
 import org.apache.iotdb.db.conf.IoTDBConfig;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
-import org.apache.iotdb.db.exception.LoadRuntimeOutOfMemoryException;
+import org.apache.iotdb.db.exception.load.LoadRuntimeOutOfMemoryException;
 import org.apache.iotdb.db.storageengine.dataregion.modification.ModEntry;
+import org.apache.iotdb.db.storageengine.dataregion.modification.ModificationFile;
 import org.apache.iotdb.db.storageengine.dataregion.tsfile.TsFileResource;
 import org.apache.iotdb.db.storageengine.dataregion.tsfile.timeindex.FileTimeIndex;
 import org.apache.iotdb.db.storageengine.dataregion.tsfile.timeindex.ITimeIndex;
-import org.apache.iotdb.db.storageengine.load.memory.LoadTsFileAnalyzeSchemaMemoryBlock;
+import org.apache.iotdb.db.storageengine.load.memory.LoadTsFileMemoryBlock;
 import org.apache.iotdb.db.storageengine.load.memory.LoadTsFileMemoryManager;
 import org.apache.iotdb.db.utils.ModificationUtils;
 
@@ -69,7 +70,7 @@ public class LoadTsFileTreeSchemaCache {
     FLUSH_ALIGNED_CACHE_MEMORY_SIZE_IN_BYTES = ANALYZE_SCHEMA_MEMORY_SIZE_IN_BYTES >> 1;
   }
 
-  private final LoadTsFileAnalyzeSchemaMemoryBlock block;
+  private final LoadTsFileMemoryBlock block;
 
   private Map<IDeviceID, Set<MeasurementSchema>> currentBatchDevice2TimeSeriesSchemas;
   private Map<IDeviceID, Boolean> tsFileDevice2IsAligned;
@@ -89,7 +90,7 @@ public class LoadTsFileTreeSchemaCache {
   public LoadTsFileTreeSchemaCache() throws LoadRuntimeOutOfMemoryException {
     this.block =
         LoadTsFileMemoryManager.getInstance()
-            .allocateAnalyzeSchemaMemoryBlock(ANALYZE_SCHEMA_MEMORY_SIZE_IN_BYTES);
+            .allocateMemoryBlock(ANALYZE_SCHEMA_MEMORY_SIZE_IN_BYTES);
     this.currentBatchDevice2TimeSeriesSchemas = new HashMap<>();
     this.tsFileDevice2IsAligned = new HashMap<>();
     this.alreadySetDatabases = new HashSet<>();
@@ -153,7 +154,7 @@ public class LoadTsFileTreeSchemaCache {
       TsFileResource resource, TsFileSequenceReader reader) throws IOException {
     clearModificationsAndTimeIndex();
 
-    currentModifications = resource.getAllModEntries();
+    currentModifications = ModificationFile.readAllModifications(resource.getTsFile(), true);
     for (final ModEntry modification : currentModifications) {
       currentModificationsMemoryUsageSizeInBytes += modification.serializedSize();
     }
@@ -188,12 +189,7 @@ public class LoadTsFileTreeSchemaCache {
   }
 
   public boolean isDeviceDeletedByMods(IDeviceID device) throws IllegalPathException {
-    return currentTimeIndex != null
-        && ModificationUtils.isAllDeletedByMods(
-            currentModifications,
-            device,
-            currentTimeIndex.getStartTime(device),
-            currentTimeIndex.getEndTime(device));
+    return ModificationUtils.isDeviceDeletedByMods(currentModifications, currentTimeIndex, device);
   }
 
   public boolean isTimeseriesDeletedByMods(IDeviceID device, TimeseriesMetadata timeseriesMetadata)

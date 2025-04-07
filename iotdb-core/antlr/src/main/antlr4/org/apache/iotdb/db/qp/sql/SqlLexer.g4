@@ -165,6 +165,10 @@ CONFIGNODES
     : C O N F I G N O D E S
     ;
 
+CONFIGNODE
+    : C O N F I G N O D E
+    ;
+
 CONFIGURATION
     : C O N F I G U R A T I O N
     ;
@@ -205,6 +209,14 @@ CREATE
     : C R E A T E
     ;
 
+CURRENT_SQL_DIALECT
+    : C U R R E N T '_' S Q L '_' D I A L E C T
+    ;
+
+CURRENT_USER
+    : C U R R E N T '_' U S E R
+    ;
+
 DATA
     : D A T A
     ;
@@ -215,6 +227,10 @@ DATABASE
 
 DATABASES
     : D A T A B A S E S
+    ;
+
+DATANODE
+    : D A T A N O D E
     ;
 
 DATANODEID
@@ -300,6 +316,10 @@ EXISTS
 
 EXPLAIN
     : E X P L A I N
+    ;
+
+EXTEND
+    : E X T E N D
     ;
 
 EXTRACTOR
@@ -554,6 +574,10 @@ PASSWORD
     : P A S S W O R D
     ;
 
+PATH
+    : P A T H
+    ;
+
 PATHS
     : P A T H S
     ;
@@ -640,6 +664,10 @@ RANGE
 
 READONLY
     : R E A D O N L Y
+    ;
+
+RECONSTRUCT
+    : R E C O N S T R U C T
     ;
 
 REGEXP
@@ -750,6 +778,10 @@ SPACE
     : S P A C E
     ;
 
+SQL_DIALECT
+    : S Q L '_' D I A L E C T
+    ;
+
 STORAGE
     : S T O R A G E
     ;
@@ -788,6 +820,10 @@ SUBSTRING
 
 SYSTEM
     : S Y S T E M
+    ;
+
+TABLE
+    : T A B L E
     ;
 
 TAGS
@@ -860,6 +896,10 @@ TOPICS
 
 TRACING
     : T R A C I N G
+    ;
+
+TREE
+    : T R E E
     ;
 
 TRIGGER

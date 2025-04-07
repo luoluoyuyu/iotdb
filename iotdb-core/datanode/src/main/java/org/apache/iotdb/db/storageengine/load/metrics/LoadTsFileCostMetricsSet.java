@@ -40,6 +40,8 @@ public class LoadTsFileCostMetricsSet implements IMetricSet {
   public static final String FIRST_PHASE = "first_phase";
   public static final String SECOND_PHASE = "second_phase";
   public static final String LOAD_LOCALLY = "load_locally";
+  public static final String SCHEDULER_CAST_TABLETS = "scheduler_cast_tablets";
+  public static final String ANALYSIS_CAST_TABLETS = "analysis_cast_tablets";
 
   private LoadTsFileCostMetricsSet() {
     // empty constructor
@@ -49,6 +51,8 @@ public class LoadTsFileCostMetricsSet implements IMetricSet {
   private Timer firstPhaseTimer = DoNothingMetricManager.DO_NOTHING_TIMER;
   private Timer secondPhaseTimer = DoNothingMetricManager.DO_NOTHING_TIMER;
   private Timer loadLocallyTimer = DoNothingMetricManager.DO_NOTHING_TIMER;
+  private Timer schedulerCastTabletsTimer = DoNothingMetricManager.DO_NOTHING_TIMER;
+  private Timer analysisCastTabletsTimer = DoNothingMetricManager.DO_NOTHING_TIMER;
 
   private Counter diskIOCounter = DoNothingMetricManager.DO_NOTHING_COUNTER;
 
@@ -65,6 +69,12 @@ public class LoadTsFileCostMetricsSet implements IMetricSet {
         break;
       case LOAD_LOCALLY:
         loadLocallyTimer.updateNanos(costTimeInNanos);
+        break;
+      case SCHEDULER_CAST_TABLETS:
+        schedulerCastTabletsTimer.updateNanos(costTimeInNanos);
+        break;
+      case ANALYSIS_CAST_TABLETS:
+        analysisCastTabletsTimer.updateNanos(costTimeInNanos);
         break;
       default:
         throw new UnsupportedOperationException("Unsupported stage: " + stage);
@@ -98,6 +108,18 @@ public class LoadTsFileCostMetricsSet implements IMetricSet {
             MetricLevel.IMPORTANT,
             Tag.NAME.toString(),
             LOAD_LOCALLY);
+    schedulerCastTabletsTimer =
+        metricService.getOrCreateTimer(
+            Metric.LOAD_TIME_COST.toString(),
+            MetricLevel.IMPORTANT,
+            Tag.NAME.toString(),
+            SCHEDULER_CAST_TABLETS);
+    analysisCastTabletsTimer =
+        metricService.getOrCreateTimer(
+            Metric.LOAD_TIME_COST.toString(),
+            MetricLevel.IMPORTANT,
+            Tag.NAME.toString(),
+            ANALYSIS_CAST_TABLETS);
 
     diskIOCounter =
         metricService.getOrCreateCounter(
@@ -109,7 +131,13 @@ public class LoadTsFileCostMetricsSet implements IMetricSet {
 
   @Override
   public void unbindFrom(AbstractMetricService metricService) {
-    Arrays.asList(ANALYSIS, FIRST_PHASE, SECOND_PHASE, LOAD_LOCALLY)
+    Arrays.asList(
+            ANALYSIS,
+            FIRST_PHASE,
+            SECOND_PHASE,
+            LOAD_LOCALLY,
+            SCHEDULER_CAST_TABLETS,
+            ANALYSIS_CAST_TABLETS)
         .forEach(
             stage ->
                 metricService.remove(

@@ -31,7 +31,7 @@ import org.apache.iotdb.commons.consensus.DataRegionId;
 import org.apache.iotdb.commons.consensus.index.ProgressIndex;
 import org.apache.iotdb.commons.consensus.index.ProgressIndexType;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
-import org.apache.iotdb.db.exception.LoadFileException;
+import org.apache.iotdb.db.exception.load.LoadFileException;
 import org.apache.iotdb.db.exception.mpp.FragmentInstanceDispatchException;
 import org.apache.iotdb.db.pipe.agent.PipeDataNodeAgent;
 import org.apache.iotdb.db.queryengine.plan.planner.plan.FragmentInstance;
@@ -105,7 +105,7 @@ public class LoadTsFileDispatcherImpl implements IFragInstanceDispatcher {
           for (FragmentInstance instance : instances) {
             try (SetThreadName threadName =
                 new SetThreadName(
-                    LoadTsFileScheduler.class.getName() + instance.getId().getFullId())) {
+                    "load-dispatcher" + "-" + instance.getId().getFullId() + "-" + uuid)) {
               dispatchOneInstance(instance);
             } catch (FragmentInstanceDispatchException e) {
               return new FragInstanceDispatchResult(e.getFailureStatus());
@@ -230,16 +230,21 @@ public class LoadTsFileDispatcherImpl implements IFragInstanceDispatcher {
     for (TEndPoint endPoint : allEndPoint) {
       try (SetThreadName threadName =
           new SetThreadName(
-              LoadTsFileScheduler.class.getName() + "-" + loadCommandReq.commandType)) {
+              "load-dispatcher"
+                  + "-"
+                  + LoadTsFileScheduler.LoadCommand.values()[loadCommandReq.commandType]
+                  + "-"
+                  + loadCommandReq.uuid)) {
         if (isDispatchedToLocal(endPoint)) {
           dispatchLocally(loadCommandReq);
         } else {
           dispatchRemote(loadCommandReq, endPoint);
         }
       } catch (FragmentInstanceDispatchException e) {
+        LOGGER.warn("Cannot dispatch LoadCommand for load operation {}", loadCommandReq, e);
         return immediateFuture(new FragInstanceDispatchResult(e.getFailureStatus()));
       } catch (Exception t) {
-        LOGGER.warn("cannot dispatch LoadCommand for load operation", t);
+        LOGGER.warn("Cannot dispatch LoadCommand for load operation {}", loadCommandReq, t);
         return immediateFuture(
             new FragInstanceDispatchResult(
                 RpcUtils.getStatus(
