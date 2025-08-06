@@ -44,6 +44,7 @@ public abstract class LogWriter implements ILogWriter {
   private static final Logger logger = LoggerFactory.getLogger(LogWriter.class);
 
   protected final File logFile;
+  protected final String logFilePath;
   protected final FileOutputStream logStream;
   protected final FileChannel logChannel;
   protected long originalSize = 0;
@@ -67,6 +68,7 @@ public abstract class LogWriter implements ILogWriter {
 
   protected LogWriter(File logFile, WALFileVersion version) throws IOException {
     this.logFile = logFile;
+    this.logFilePath = logFile.getAbsolutePath();
     this.logStream = new FileOutputStream(logFile, true);
     this.logChannel = this.logStream.getChannel();
     if ((!logFile.exists() || logFile.length() == 0) && version == WALFileVersion.V2) {
@@ -161,6 +163,10 @@ public abstract class LogWriter implements ILogWriter {
   @Override
   public File getLogFile() {
     return logFile;
+  }
+
+  public WALSegmentMeta getWalSegmentMeta() throws IOException {
+    return new WALSegmentMeta(logChannel.position(), logFilePath);
   }
 
   @Override
