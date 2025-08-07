@@ -19,6 +19,10 @@
 
 package org.apache.iotdb.db.storageengine.dataregion.wal.utils;
 
+import org.apache.iotdb.db.storageengine.StorageEngine;
+import org.apache.iotdb.db.storageengine.dataregion.wal.io.WALSegmentMeta;
+import org.apache.iotdb.pipe.api.exception.PipeException;
+
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -29,34 +33,39 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 public class WALSegmentCache implements WALCache {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(WALSegmentCache.class);
 
-  private final LoadingCache<WALEntrySegmentPosition, ByteBuffer> bufferCache;
+  private final LoadingCache<WALSegmentMeta, ByteBuffer> bufferCache;
   private final int WALEntrySegmentPositionSize = 10 * 8 * 8;
+  private final long maxSize;
 
   public WALSegmentCache(long maxSize, Set<Long> memTablesNeedSearch) {
+    this.maxSize = maxSize;
     this.bufferCache =
         Caffeine.newBuilder()
             .maximumWeight(maxSize)
             .weigher(
-                (Weigher<WALEntrySegmentPosition, ByteBuffer>)
+                (Weigher<WALSegmentMeta, ByteBuffer>)
                     (position, buffer) -> {
                       return buffer.capacity() + WALEntrySegmentPositionSize;
                     })
             .recordStats()
-            .build(new WALEntryCacheLoader());
+            .build(new WALEntryCacheLoader(maxSize));
   }
 
   @Override
   public ByteBuffer load(WALEntrySegmentPosition key) {
     ByteBuffer buffer = null;
     synchronized (key.getWalSegmentMeta()) {
-      buffer = bufferCache.get(key);
+      buffer = bufferCache.get(key.getWalSegmentMeta());
     }
 
     if (buffer == null) {
@@ -77,12 +86,33 @@ public class WALSegmentCache implements WALCache {
     return bufferCache.stats();
   }
 
-  private static class WALEntryCacheLoader
-      implements CacheLoader<WALEntrySegmentPosition, ByteBuffer> {
+  private static class WALEntryCacheLoader implements CacheLoader<WALSegmentMeta, ByteBuffer> {
+    private long maxSize;
+
+    WALEntryCacheLoader(long maxSize) {
+      this.maxSize = maxSize;
+    }
 
     @Override
-    public @Nullable ByteBuffer load(@NonNull final WALEntrySegmentPosition key) throws Exception {
-      return key.getSegmentBuffer();
+    public @Nullable ByteBuffer load(@NonNull final WALSegmentMeta key) throws Exception {
+      return WALEntrySegmentPosition.getSegmentBuffer(key);
+    }
+
+    @Override
+    public @NonNull Map<@NonNull WALSegmentMeta, @NonNull ByteBuffer> loadAll(
+        @NonNull final Iterable<? extends @NonNull WALSegmentMeta> walEntryPositions)
+        throws Exception {
+      long loadSize = (maxSize / StorageEngine.getInstance().getDataRegionNumber()) / 4;
+      Map<WALSegmentMeta, ByteBuffer> map = new HashMap<>();
+      walEntryPositions.forEach(
+          a -> {
+            try {
+              map.putAll(WALEntrySegmentPosition.getSegmentBuffer(a, loadSize));
+            } catch (IOException e) {
+              throw new PipeException("loadAll failed for " + a, e);
+            }
+          });
+      return map;
     }
   }
 }

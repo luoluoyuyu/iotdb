@@ -37,6 +37,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -134,12 +136,12 @@ public class WALEntrySegmentPosition {
     }
   }
 
-  public ByteBuffer getSegmentBuffer() throws IOException {
+  public static ByteBuffer getSegmentBuffer(WALSegmentMeta walSegmentMeta) throws IOException {
     if (walSegmentMeta == null) {
       throw new IOException("WAL segment meta is not set.");
     }
     final long startTime = System.nanoTime();
-    try (FileChannel channel = openReadFileChannel()) {
+    try (FileChannel channel = openReadFileChannel(walSegmentMeta.getLogFile())) {
       channel.position(walSegmentMeta.getPosition());
       final ByteBuffer segmentHeaderWithoutCompressedSizeBuffer =
           ByteBuffer.allocate(Integer.BYTES + Byte.BYTES);
@@ -166,16 +168,79 @@ public class WALEntrySegmentPosition {
       return uncompressedDataBuffer;
     } catch (Exception e) {
       LOGGER.error(
-          "Unexpected error when reading a wal segment from {}@{} with size {}",
-          walFile,
-          position,
-          size,
+          "Unexpected error when reading a wal segment from {}@{}",
+          walSegmentMeta.getLogFile(),
+          walSegmentMeta.getPosition(),
           e);
       throw new IOException(e);
     } finally {
       PipeWALInsertNodeCacheMetrics.getInstance()
           .LoadWALTimer
           .updateNanos(System.nanoTime() - startTime);
+    }
+  }
+
+  public static Map<WALSegmentMeta, ByteBuffer> getSegmentBuffer(
+      WALSegmentMeta walSegmentMeta, long maxSize) throws IOException {
+    if (walSegmentMeta == null) {
+      throw new IllegalArgumentException("WAL segment meta is not set.");
+    }
+
+    Map<WALSegmentMeta, ByteBuffer> segmentBuffers = new HashMap<>();
+    final long startTime = System.nanoTime();
+    try (FileChannel channel = openReadFileChannel(walSegmentMeta.getLogFile())) {
+      long position = walSegmentMeta.getPosition();
+      long size = 0;
+      channel.position(position);
+      while (size < maxSize && channel.size() - channel.position() > 0) {
+        final ByteBuffer segmentHeaderWithoutCompressedSizeBuffer =
+            ByteBuffer.allocate(Integer.BYTES + Byte.BYTES);
+        final ByteBuffer compressedSizeBuffer = ByteBuffer.allocate(Integer.BYTES);
+
+        WALInputStream.SegmentInfo segmentInfo =
+            WALInputStream.getNextSegmentInfo(
+                channel, segmentHeaderWithoutCompressedSizeBuffer, compressedSizeBuffer);
+        final ByteBuffer compressedDataBuffer = ByteBuffer.allocate(segmentInfo.dataInDiskSize);
+        WALInputStream.readWALBufferFromChannel(compressedDataBuffer, channel);
+
+        final ByteBuffer uncompressedDataBuffer;
+        if (segmentInfo.compressionType != CompressionType.UNCOMPRESSED) {
+          uncompressedDataBuffer = ByteBuffer.allocate(segmentInfo.uncompressedSize);
+          compressedDataBuffer.flip();
+          WALInputStream.uncompressWALBuffer(
+              compressedDataBuffer,
+              uncompressedDataBuffer,
+              IUnCompressor.getUnCompressor(segmentInfo.compressionType));
+        } else {
+          uncompressedDataBuffer = compressedDataBuffer;
+        }
+        uncompressedDataBuffer.flip();
+        size += uncompressedDataBuffer.capacity();
+        segmentBuffers.put(
+            new WALSegmentMeta(position, walSegmentMeta.getLogFile()), uncompressedDataBuffer);
+      }
+
+      return segmentBuffers;
+    } catch (Exception e) {
+      LOGGER.error(
+          "Unexpected error when reading a wal segment from {}@{}",
+          walSegmentMeta.getLogFile(),
+          walSegmentMeta.getPosition(),
+          e);
+      throw new IOException(e);
+    } finally {
+      PipeWALInsertNodeCacheMetrics.getInstance()
+          .LoadWALTimer
+          .updateNanos(System.nanoTime() - startTime);
+    }
+  }
+
+  private static FileChannel openReadFileChannel(String path) throws IOException {
+    try {
+      return FileChannel.open(new File(path).toPath(), StandardOpenOption.READ);
+    } catch (IOException e) {
+      // retry once
+      return FileChannel.open(new File(path).toPath(), StandardOpenOption.READ);
     }
   }
 
