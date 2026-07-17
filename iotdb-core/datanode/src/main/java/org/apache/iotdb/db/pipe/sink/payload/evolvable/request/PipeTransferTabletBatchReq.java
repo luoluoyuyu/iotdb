@@ -105,8 +105,7 @@ public class PipeTransferTabletBatchReq extends TPipeTransferReq {
 
     batchReq.version = IoTDBSinkRequestVersion.VERSION_1.getVersion();
     batchReq.type = PipeRequestType.TRANSFER_TABLET_BATCH.getType();
-    try (final PublicBAOS byteArrayOutputStream =
-            new PublicBAOS(calculateSerializedSize(insertNodeBuffers, tabletBuffers));
+    try (final PublicBAOS byteArrayOutputStream = new PublicBAOS();
         final DataOutputStream outputStream = new DataOutputStream(byteArrayOutputStream)) {
       // Binary buffer, for rolling upgrade
       ReadWriteIOUtils.write(0, outputStream);
@@ -126,13 +125,6 @@ public class PipeTransferTabletBatchReq extends TPipeTransferReq {
     }
 
     return batchReq;
-  }
-
-  static int calculateSerializedSize(
-      final List<ByteBuffer> insertNodeBuffers, final List<ByteBuffer> tabletBuffers) {
-    return Integer.BYTES * 3
-        + insertNodeBuffers.stream().mapToInt(ByteBuffer::limit).sum()
-        + tabletBuffers.stream().mapToInt(ByteBuffer::limit).sum();
   }
 
   public static PipeTransferTabletBatchReq fromTPipeTransferReq(

@@ -122,8 +122,7 @@ public class PipeTabletEventPlainBatch extends PipeTabletEventBatch {
           }
         }
         for (final Pair<Boolean, Tablet> tabletPair : batchTablets) {
-          try (final PublicBAOS byteArrayOutputStream =
-                  new PublicBAOS(calculateTabletSerializedSize(tabletPair.getRight()));
+          try (final PublicBAOS byteArrayOutputStream = new PublicBAOS();
               final DataOutputStream outputStream = new DataOutputStream(byteArrayOutputStream)) {
             tabletPair.getRight().serialize(outputStream);
             ReadWriteIOUtils.write(true, outputStream);
@@ -187,11 +186,9 @@ public class PipeTabletEventPlainBatch extends PipeTabletEventBatch {
                 pipeRawTabletInsertionEvent.convertToTablet(),
                 pipeRawTabletInsertionEvent.getTableModelDatabaseName());
       } else {
-        final Tablet tablet = pipeRawTabletInsertionEvent.convertToTablet();
-        try (final PublicBAOS byteArrayOutputStream =
-                new PublicBAOS(calculateTabletSerializedSize(tablet));
+        try (final PublicBAOS byteArrayOutputStream = new PublicBAOS();
             final DataOutputStream outputStream = new DataOutputStream(byteArrayOutputStream)) {
-          tablet.serialize(outputStream);
+          pipeRawTabletInsertionEvent.convertToTablet().serialize(outputStream);
           ReadWriteIOUtils.write(pipeRawTabletInsertionEvent.isAligned(), outputStream);
           buffer = ByteBuffer.wrap(byteArrayOutputStream.getBuf(), 0, byteArrayOutputStream.size());
         }
@@ -219,10 +216,6 @@ public class PipeTabletEventPlainBatch extends PipeTabletEventBatch {
     currentBatch.setLeft(currentBatch.getLeft() + tablet.getRowSize());
     currentBatch.getRight().add(tablet);
     return PipeMemoryWeightUtil.calculateTabletSizeInBytes(tablet) + 4;
-  }
-
-  private static int calculateTabletSerializedSize(final Tablet tablet) {
-    return tablet.serializedSize() + Byte.BYTES;
   }
 
   public static Tablet copyTablet(final Tablet tablet) {
