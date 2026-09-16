@@ -119,12 +119,42 @@ public class LoadTsFileManager {
 
   public LoadTsFileManager(final DataRegion dataRegion) {
     this.dataRegion = Objects.requireNonNull(dataRegion);
+    recover();
   }
 
   public void start() {}
 
   public void stop() {
     new HashSet<>(uuid2WriterManager.keySet()).forEach(this::forceCloseWriterManager);
+  }
+
+  private void recover() {
+    final File[] baseDirs =
+        Arrays.stream(LOAD_BASE_DIRS.get())
+            .map(File::new)
+            .map(this::getDataRegionLoadDir)
+            .toArray(File[]::new);
+    for (final File baseDir : baseDirs) {
+      final File[] uuidDirs = baseDir.listFiles();
+      if (uuidDirs == null) {
+        continue;
+      }
+      for (final File uuidDir : uuidDirs) {
+        if (!uuidDir.isDirectory()) {
+          continue;
+        }
+        final String uuid = uuidDir.getName();
+        try {
+          final TsFileWriterManager recovered = new TsFileWriterManager(uuidDir).recoverFromDisk();
+          if (recovered.hasPendingTsFiles()) {
+            uuid2WriterManager.put(uuid, recovered);
+            LOGGER.info("Recovered LOAD writer manager for uuid {}", uuid);
+          }
+        } catch (final Exception e) {
+          LOGGER.warn("Failed to recover LOAD writer manager for uuid {}", uuid, e);
+        }
+      }
+    }
   }
 
   public void writeToDataRegion(LoadTsFilePieceNode pieceNode, String uuid)
@@ -445,7 +475,7 @@ public class LoadTsFileManager {
     }
   }
 
-  private static class TsFileWriterManager {
+  private class TsFileWriterManager {
 
     private final File taskDir;
     private Map<DataPartitionInfo, TsFilePrecalculatedChunkWriter> dataPartition2Writer;
@@ -471,6 +501,53 @@ public class LoadTsFileManager {
       if (!dir.exists() && dir.mkdirs()) {
         LOGGER.info(StorageEngineMessages.LOAD_TSFILE_DIR_CREATED, dir.getPath());
       }
+    }
+
+    private TsFileWriterManager recoverFromDisk() throws IOException {
+      final File[] files = taskDir.listFiles();
+      if (files == null) {
+        return this;
+      }
+      for (final File progressFile : files) {
+        if (!progressFile.getName().endsWith(LoadTsFileProgress.PROGRESS_SUFFIX)) {
+          continue;
+        }
+        final String progressName = progressFile.getName();
+        final File tsFile =
+            new File(
+                progressFile.getParentFile(),
+                progressName.substring(
+                    0, progressName.length() - LoadTsFileProgress.PROGRESS_SUFFIX.length()));
+        if (!tsFile.isFile()) {
+          continue;
+        }
+        final LoadTsFileProgress progress = new LoadTsFileProgress(tsFile);
+        final List<LoadTsFileProgress.ChunkRangeRecord> records = progress.readAllRecords();
+        if (records.isEmpty()) {
+          continue;
+        }
+
+        final TTimePartitionSlot timePartitionSlot =
+            new TTimePartitionSlot(parseTimePartitionStart(tsFile.getName()));
+        final DataPartitionInfo partitionInfo =
+            new DataPartitionInfo(dataRegion, timePartitionSlot);
+        dataPartition2Resource.put(partitionInfo, new TsFileResource(tsFile));
+        dataPartition2Progress.put(partitionInfo, new LoadTsFileProgress(tsFile));
+        if (tsFile.length() >= progress.getTotalLength()) {
+          isPrepared = true;
+        }
+      }
+      return this;
+    }
+
+    private boolean hasPendingTsFiles() {
+      return !dataPartition2Resource.isEmpty();
+    }
+
+    private long parseTimePartitionStart(final String tsFileName) {
+      final String baseName = tsFileName.substring(0, tsFileName.lastIndexOf('.'));
+      final int lastDash = baseName.lastIndexOf(IoTDBConstant.FILE_NAME_SEPARATOR);
+      return Long.parseLong(baseName.substring(lastDash + 1));
     }
 
     /**
@@ -623,15 +700,16 @@ public class LoadTsFileManager {
         dataRegion.loadNewTsFile(tsFileResource, true, isGeneratedByPipe, false, Optional.empty());
 
         // Metrics
+        final TsFilePrecalculatedChunkWriter writer = dataPartition2Writer.get(entry.getKey());
+        if (writer == null) {
+          continue;
+        }
         dataRegion
             .getNonSystemDatabaseName()
             .ifPresent(
                 databaseName ->
                     updateWritePointCountMetrics(
-                        dataRegion,
-                        databaseName,
-                        getTsFileWritePointCount(dataPartition2Writer.get(entry.getKey())),
-                        false));
+                        dataRegion, databaseName, getTsFileWritePointCount(writer), false));
       }
     }
 
