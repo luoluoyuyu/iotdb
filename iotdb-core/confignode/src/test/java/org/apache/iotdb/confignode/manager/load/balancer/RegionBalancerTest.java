@@ -19,11 +19,14 @@
 
 package org.apache.iotdb.confignode.manager.load.balancer;
 
+import org.apache.iotdb.common.rpc.thrift.TConsensusGroupId;
 import org.apache.iotdb.common.rpc.thrift.TConsensusGroupType;
 import org.apache.iotdb.common.rpc.thrift.TDataNodeConfiguration;
 import org.apache.iotdb.common.rpc.thrift.TDataNodeLocation;
 import org.apache.iotdb.common.rpc.thrift.TEndPoint;
+import org.apache.iotdb.common.rpc.thrift.TRegionReplicaSet;
 import org.apache.iotdb.commons.cluster.NodeStatus;
+import org.apache.iotdb.confignode.consensus.request.write.region.CreateRegionGroupsPlan;
 import org.apache.iotdb.confignode.exception.NotEnoughDataNodeException;
 import org.apache.iotdb.confignode.manager.IManager;
 import org.apache.iotdb.confignode.manager.ProcedureManager;
@@ -37,10 +40,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -140,5 +148,96 @@ public class RegionBalancerTest {
           "Removing node should be excluded: " + e.getMessage(),
           e.getMessage().contains("dataNodeId:" + REMOVING_DATA_NODE_ID));
     }
+  }
+
+  @Test
+  public void testAllocationPlanPrefersTheRequestedDataNode() throws Exception {
+    when(procedureManager.getRemovingDataNodeIds()).thenReturn(Collections.emptySet());
+    when(nodeManager.filterDataNodeThroughStatus(
+            ArgumentMatchers.<Function<NodeStatus, Boolean>>any()))
+        .thenReturn(new ArrayList<>(candidates(1, 2, 3).values()));
+    when(partitionManager.getAllReplicaSets(TConsensusGroupType.DataRegion))
+        .thenReturn(new ArrayList<>());
+    when(partitionManager.getAllReplicaSets("db1", TConsensusGroupType.DataRegion))
+        .thenReturn(new ArrayList<>());
+    when(clusterSchemaManager.getReplicationFactor("db1", TConsensusGroupType.DataRegion))
+        .thenReturn(1);
+
+    final CreateRegionGroupsPlan plan =
+        regionBalancer.genRegionGroupsAllocationPlan(
+            Collections.singletonMap("db1", 1), TConsensusGroupType.DataRegion, 2);
+
+    final List<TRegionReplicaSet> regionGroups = plan.getRegionGroupMap().get("db1");
+    Assert.assertNotNull(regionGroups);
+    Assert.assertEquals(1, regionGroups.size());
+    Assert.assertEquals(
+        Collections.singletonList(2),
+        regionGroups.get(0).getDataNodeLocations().stream()
+            .map(TDataNodeLocation::getDataNodeId)
+            .collect(Collectors.toList()));
+  }
+
+  @Test
+  public void testPreferDataNodeMovesAnExistingReplicaToTheFirstPosition() {
+    final TRegionReplicaSet regionGroup = replicaSet(1, 2, 3);
+
+    RegionBalancer.preferDataNodeIfPossible(regionGroup, 3, candidates(1, 2, 3));
+
+    Assert.assertEquals(Arrays.asList(3, 1, 2), dataNodeIdsOf(regionGroup));
+  }
+
+  @Test
+  public void testPreferDataNodeReplacesTheLastReplicaWhenItIsAbsent() {
+    final TRegionReplicaSet regionGroup = replicaSet(1, 2, 3);
+
+    RegionBalancer.preferDataNodeIfPossible(regionGroup, 4, candidates(1, 2, 3, 4));
+
+    Assert.assertEquals(Arrays.asList(1, 2, 4), dataNodeIdsOf(regionGroup));
+  }
+
+  @Test
+  public void testPreferDataNodeIsIgnoredWhenDisabledOrNotACandidate() {
+    final TRegionReplicaSet regionGroup = replicaSet(1, 2, 3);
+
+    RegionBalancer.preferDataNodeIfPossible(regionGroup, -1, candidates(1, 2, 3));
+    Assert.assertEquals(Arrays.asList(1, 2, 3), dataNodeIdsOf(regionGroup));
+
+    RegionBalancer.preferDataNodeIfPossible(regionGroup, 4, candidates(1, 2, 3));
+    Assert.assertEquals(Arrays.asList(1, 2, 3), dataNodeIdsOf(regionGroup));
+  }
+
+  private static List<Integer> dataNodeIdsOf(final TRegionReplicaSet regionGroup) {
+    return regionGroup.getDataNodeLocations().stream()
+        .map(TDataNodeLocation::getDataNodeId)
+        .collect(Collectors.toList());
+  }
+
+  private static TRegionReplicaSet replicaSet(final int... dataNodeIds) {
+    final List<TDataNodeLocation> locations = new ArrayList<>(dataNodeIds.length);
+    for (final int dataNodeId : dataNodeIds) {
+      locations.add(dataNodeConfiguration(dataNodeId).getLocation());
+    }
+    return new TRegionReplicaSet(
+        new TConsensusGroupId(TConsensusGroupType.DataRegion, 0), locations);
+  }
+
+  private static Map<Integer, TDataNodeConfiguration> candidates(final int... dataNodeIds) {
+    final Map<Integer, TDataNodeConfiguration> candidates = new HashMap<>();
+    for (final int dataNodeId : dataNodeIds) {
+      candidates.put(dataNodeId, dataNodeConfiguration(dataNodeId));
+    }
+    return candidates;
+  }
+
+  private static TDataNodeConfiguration dataNodeConfiguration(final int dataNodeId) {
+    return new TDataNodeConfiguration()
+        .setLocation(
+            new TDataNodeLocation(
+                dataNodeId,
+                new TEndPoint("127.0.0.1", 1000 + dataNodeId),
+                new TEndPoint("127.0.0.1", 2000 + dataNodeId),
+                new TEndPoint("127.0.0.1", 3000 + dataNodeId),
+                new TEndPoint("127.0.0.1", 4000 + dataNodeId),
+                new TEndPoint("127.0.0.1", 5000 + dataNodeId)));
   }
 }

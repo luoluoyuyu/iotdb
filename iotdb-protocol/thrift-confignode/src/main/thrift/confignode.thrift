@@ -279,6 +279,9 @@ struct TTimeSlotList {
 struct TDataPartitionReq {
   // map<DatabaseName, map<TSeriesPartitionSlot, TTimePartionSlotList>>
   1: required map<string, map<common.TSeriesPartitionSlot, TTimeSlotList>> partitionSlotsMap
+  // Best-effort hint: the DataNode that should be preferred as the first replica of the
+  // DataRegions created by this request. -1 or unset means no preference.
+  2: optional i32 preferredDataNodeId
 }
 
 struct TDataPartitionTableResp {

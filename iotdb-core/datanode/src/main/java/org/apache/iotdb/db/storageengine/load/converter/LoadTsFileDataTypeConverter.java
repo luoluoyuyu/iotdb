@@ -44,6 +44,7 @@ import org.apache.iotdb.db.queryengine.plan.relational.sql.parser.SqlParser;
 import org.apache.iotdb.db.queryengine.plan.statement.Statement;
 import org.apache.iotdb.db.queryengine.plan.statement.crud.LoadTsFileStatement;
 import org.apache.iotdb.db.queryengine.plan.statement.pipe.PipeEnrichedStatement;
+import org.apache.iotdb.db.storageengine.load.LoadTsFilePreference;
 import org.apache.iotdb.rpc.TSStatusCode;
 
 import org.slf4j.Logger;
@@ -176,8 +177,14 @@ public class LoadTsFileDataTypeConverter {
     try {
       getTabletConversionSemaphore().acquire();
       isPermitAcquired = true;
-      return loadTsFileTableStatement.accept(
-          tableStatementDataTypeConvertExecutionVisitor, loadTsFileTableStatement.getDatabase());
+      ClusterPartitionFetcher.setLoadPreferredDataNodeId(
+          LoadTsFilePreference.getPreferredDataNodeId());
+      try {
+        return loadTsFileTableStatement.accept(
+            tableStatementDataTypeConvertExecutionVisitor, loadTsFileTableStatement.getDatabase());
+      } finally {
+        ClusterPartitionFetcher.clearLoadPreferredDataNodeId();
+      }
     } catch (final InterruptedException e) {
       return getInterruptedConversionStatus(e);
     } catch (Exception e) {
@@ -242,7 +249,13 @@ public class LoadTsFileDataTypeConverter {
     try {
       getTabletConversionSemaphore().acquire();
       isPermitAcquired = true;
-      return loadTsFileTreeStatement.accept(treeStatementDataTypeConvertExecutionVisitor, null);
+      ClusterPartitionFetcher.setLoadPreferredDataNodeId(
+          LoadTsFilePreference.getPreferredDataNodeId());
+      try {
+        return loadTsFileTreeStatement.accept(treeStatementDataTypeConvertExecutionVisitor, null);
+      } finally {
+        ClusterPartitionFetcher.clearLoadPreferredDataNodeId();
+      }
     } catch (final InterruptedException e) {
       return getInterruptedConversionStatus(e);
     } catch (Exception e) {

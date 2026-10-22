@@ -68,6 +68,7 @@ import java.util.stream.IntStream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
@@ -135,7 +136,7 @@ public class PartitionManagerProactiveExtensionTest {
     when(schemaManager.getMinRegionGroupNum(DATABASE, type)).thenReturn(4);
     when(schemaManager.getMaxRegionGroupNum(DATABASE, type)).thenReturn(5);
     when(schemaManager.getMaxRegionGroupNum(SECOND_DATABASE, type)).thenReturn(3);
-    when(loadManager.allocateRegionGroups(anyMap(), any(TConsensusGroupType.class)))
+    when(loadManager.allocateRegionGroups(anyMap(), any(TConsensusGroupType.class), anyInt()))
         .thenAnswer(
             invocation -> {
               Map<String, Integer> allotments = invocation.getArgument(0);
@@ -169,7 +170,7 @@ public class PartitionManagerProactiveExtensionTest {
       assertEquals(Math.min(slot + 1, 5), partitionInfo.getRegionGroupCount(DATABASE, type));
       persistSlots(DATABASE, type, 0, slot);
     }
-    verify(loadManager, never()).allocateRegionGroups(anyMap(), eq(otherType()));
+    verify(loadManager, never()).allocateRegionGroups(anyMap(), eq(otherType()), anyInt());
   }
 
   @Test
@@ -201,11 +202,11 @@ public class PartitionManagerProactiveExtensionTest {
             Collections.singletonMap(DATABASE, dataRequest(0, 0, 1, 2)));
     assertSuccess(partitionManager.getOrCreateDataPartition(request).getStatus());
     assertEquals(3, partitionInfo.getRegionGroupCount(DATABASE, type));
-    verify(loadManager).allocateRegionGroups(Collections.singletonMap(DATABASE, 1), type);
+    verify(loadManager).allocateRegionGroups(Collections.singletonMap(DATABASE, 1), type, -1);
 
     clearInvocations(loadManager);
     assertSuccess(partitionManager.getOrCreateDataPartition(request).getStatus());
-    verify(loadManager, never()).allocateRegionGroups(anyMap(), any());
+    verify(loadManager, never()).allocateRegionGroups(anyMap(), any(), anyInt());
   }
 
   @Test
@@ -225,7 +226,8 @@ public class PartitionManagerProactiveExtensionTest {
             .getStatus());
     assertEquals(1, partitionInfo.getRegionGroupCount(DATABASE, type));
     assertEquals(1, partitionInfo.getRegionGroupCount(SECOND_DATABASE, type));
-    verify(loadManager).allocateRegionGroups(Collections.singletonMap(SECOND_DATABASE, 1), type);
+    verify(loadManager)
+        .allocateRegionGroups(Collections.singletonMap(SECOND_DATABASE, 1), type, -1);
   }
 
   @Test
@@ -295,7 +297,7 @@ public class PartitionManagerProactiveExtensionTest {
 
     assertSuccess(extend(DATABASE, slots(1, 2, 2, 3, 3)));
     assertEquals(3, partitionInfo.getRegionGroupCount(DATABASE, type));
-    verify(loadManager).allocateRegionGroups(Collections.singletonMap(DATABASE, 2), type);
+    verify(loadManager).allocateRegionGroups(Collections.singletonMap(DATABASE, 2), type, -1);
     persistSlots(DATABASE, type, 0, 2, 3);
     assertEquals(3, partitionInfo.getSeriesPartitionSlotsCount(DATABASE, type, slots(1, 1)));
 
@@ -305,7 +307,7 @@ public class PartitionManagerProactiveExtensionTest {
       persistSlots(DATABASE, type, time, 1, 2);
     }
     assertEquals(3, partitionInfo.getRegionGroupCount(DATABASE, type));
-    verify(loadManager, never()).allocateRegionGroups(anyMap(), any());
+    verify(loadManager, never()).allocateRegionGroups(anyMap(), any(), anyInt());
   }
 
   @Test
@@ -330,21 +332,21 @@ public class PartitionManagerProactiveExtensionTest {
     Map<String, List<TSeriesPartitionSlot>> requested = new HashMap<>();
     requested.put(DATABASE, slots(0, 1, 2, 3));
     requested.put(SECOND_DATABASE, slots(0, 1, 2, 3, 4, 5));
-    assertSuccess(partitionManager.extendRegionGroupIfNecessary(requested, type));
+    assertSuccess(partitionManager.extendRegionGroupIfNecessary(requested, type, -1));
     assertEquals(4, partitionInfo.getRegionGroupCount(DATABASE, type));
     assertEquals(3, partitionInfo.getRegionGroupCount(SECOND_DATABASE, type));
     Map<String, Integer> expected = new HashMap<>();
     expected.put(DATABASE, 4);
     expected.put(SECOND_DATABASE, 3);
-    verify(loadManager).allocateRegionGroups(expected, type);
+    verify(loadManager).allocateRegionGroups(expected, type, -1);
   }
 
   @Test
   public void testNoPreallocationWithoutActivatedSlots() throws Exception {
-    assertSuccess(partitionManager.extendRegionGroupIfNecessary(Collections.emptyMap(), type));
+    assertSuccess(partitionManager.extendRegionGroupIfNecessary(Collections.emptyMap(), type, -1));
     assertSuccess(extend(DATABASE, Collections.emptyList()));
     assertEquals(0, partitionInfo.getRegionGroupCount(DATABASE, type));
-    verify(loadManager, never()).allocateRegionGroups(anyMap(), any());
+    verify(loadManager, never()).allocateRegionGroups(anyMap(), any(), anyInt());
   }
 
   @Test
@@ -369,7 +371,7 @@ public class PartitionManagerProactiveExtensionTest {
       for (String database : Arrays.asList(DATABASE, SECOND_DATABASE)) {
         pending.put(database, pendingDataSlots(database, time));
       }
-      assertSuccess(partitionManager.extendRegionGroupIfNecessary(pending, type));
+      assertSuccess(partitionManager.extendRegionGroupIfNecessary(pending, type, -1));
       assertEquals(Math.min(time + 1, 4), partitionInfo.getRegionGroupCount(DATABASE, type));
       assertEquals(Math.min(time + 1, 2), partitionInfo.getRegionGroupCount(SECOND_DATABASE, type));
       persistSlots(DATABASE, type, time, 0);
@@ -383,10 +385,10 @@ public class PartitionManagerProactiveExtensionTest {
     persistSlots(DATABASE, type, 0, 0);
     clearInvocations(loadManager);
 
-    assertSuccess(partitionManager.extendRegionGroupIfNecessary(Collections.emptyMap(), type));
+    assertSuccess(partitionManager.extendRegionGroupIfNecessary(Collections.emptyMap(), type, -1));
     assertSuccess(extend(DATABASE, Collections.emptyList()));
     assertEquals(1, partitionInfo.getRegionGroupCount(DATABASE, type));
-    verify(loadManager, never()).allocateRegionGroups(anyMap(), any());
+    verify(loadManager, never()).allocateRegionGroups(anyMap(), any(), anyInt());
   }
 
   @Test
@@ -396,7 +398,7 @@ public class PartitionManagerProactiveExtensionTest {
     assertSuccess(extend(DATABASE, slots(0)));
     assertSuccess(extend(DATABASE, slots(0, 1, 2, 3, 4)));
     assertEquals(4, partitionInfo.getRegionGroupCount(DATABASE, type));
-    verify(loadManager, never()).allocateRegionGroups(anyMap(), any());
+    verify(loadManager, never()).allocateRegionGroups(anyMap(), any(), anyInt());
   }
 
   @Test
@@ -410,7 +412,7 @@ public class PartitionManagerProactiveExtensionTest {
 
     assertSuccess(extend(DATABASE, slots(0)));
     assertEquals(2, partitionInfo.getRegionGroupCount(DATABASE, type));
-    verify(loadManager).allocateRegionGroups(Collections.singletonMap(DATABASE, 1), type);
+    verify(loadManager).allocateRegionGroups(Collections.singletonMap(DATABASE, 1), type, -1);
     for (TConsensusGroupId group : partitionInfo.getAllRegionGroupIds(DATABASE, type)) {
       if (!disabledGroup.equals(group)) {
         when(loadManager.getRegionGroupStatus(group)).thenReturn(RegionGroupStatus.Running);
@@ -420,7 +422,7 @@ public class PartitionManagerProactiveExtensionTest {
     assertSuccess(extend(DATABASE, slots(0)));
     assertSuccess(extend(DATABASE, slots(1)));
     assertEquals(2, partitionInfo.getRegionGroupCount(DATABASE, type));
-    verify(loadManager, never()).allocateRegionGroups(anyMap(), any());
+    verify(loadManager, never()).allocateRegionGroups(anyMap(), any(), anyInt());
   }
 
   @Test
@@ -433,7 +435,7 @@ public class PartitionManagerProactiveExtensionTest {
     clearInvocations(loadManager);
     assertSuccess(extend(DATABASE, slots(0)));
     assertEquals(5, partitionInfo.getRegionGroupCount(DATABASE, type));
-    verify(loadManager, never()).allocateRegionGroups(anyMap(), any());
+    verify(loadManager, never()).allocateRegionGroups(anyMap(), any(), anyInt());
   }
 
   @Test
@@ -449,14 +451,14 @@ public class PartitionManagerProactiveExtensionTest {
     when(loadManager.getRegionGroupStatus(otherGroup)).thenReturn(RegionGroupStatus.Disabled);
     clearInvocations(loadManager);
     assertSuccess(extend(DATABASE, slots(0)));
-    verify(loadManager, never()).allocateRegionGroups(anyMap(), any());
+    verify(loadManager, never()).allocateRegionGroups(anyMap(), any(), anyInt());
 
     when(loadManager.getRegionGroupStatus(currentGroup)).thenReturn(RegionGroupStatus.Disabled);
     when(loadManager.getRegionGroupStatus(otherGroup)).thenReturn(RegionGroupStatus.Running);
     assertSuccess(extend(DATABASE, slots(0)));
     assertEquals(2, partitionInfo.getRegionGroupCount(DATABASE, type));
     assertEquals(1, partitionInfo.getRegionGroupCount(DATABASE, otherType()));
-    verify(loadManager).allocateRegionGroups(Collections.singletonMap(DATABASE, 1), type);
+    verify(loadManager).allocateRegionGroups(Collections.singletonMap(DATABASE, 1), type, -1);
   }
 
   @Test
@@ -468,7 +470,7 @@ public class PartitionManagerProactiveExtensionTest {
     clearInvocations(loadManager);
     assertSuccess(extend(DATABASE, Collections.emptyList()));
     assertEquals(1, partitionInfo.getRegionGroupCount(DATABASE, type));
-    verify(loadManager, never()).allocateRegionGroups(anyMap(), any());
+    verify(loadManager, never()).allocateRegionGroups(anyMap(), any(), anyInt());
   }
 
   @Test
@@ -480,7 +482,7 @@ public class PartitionManagerProactiveExtensionTest {
     clearInvocations(loadManager);
     assertSuccess(extend(DATABASE, slots(1)));
     assertEquals(5, partitionInfo.getRegionGroupCount(DATABASE, type));
-    verify(loadManager, never()).allocateRegionGroups(anyMap(), any());
+    verify(loadManager, never()).allocateRegionGroups(anyMap(), any(), anyInt());
   }
 
   @Test
@@ -535,7 +537,7 @@ public class PartitionManagerProactiveExtensionTest {
     assertEquals(6, partitionInfo.getRegionGroupCount(SECOND_DATABASE, type));
     clearInvocations(loadManager);
     assertSuccess(extend(SECOND_DATABASE, slots(0, 1, 2, 3, 4, 5)));
-    verify(loadManager, never()).allocateRegionGroups(anyMap(), any());
+    verify(loadManager, never()).allocateRegionGroups(anyMap(), any(), anyInt());
 
     for (int slot = 6; slot < 11; slot++) {
       assertSuccess(extend(SECOND_DATABASE, slots(slot)));
@@ -556,7 +558,8 @@ public class PartitionManagerProactiveExtensionTest {
     setPolicy(RegionGroupExtensionPolicy.PROACTIVE);
     assertSuccess(extend(SECOND_DATABASE, slots(0, 1, 2, 3, 4, 5)));
     assertEquals(6, partitionInfo.getRegionGroupCount(SECOND_DATABASE, type));
-    verify(loadManager).allocateRegionGroups(Collections.singletonMap(SECOND_DATABASE, 6), type);
+    verify(loadManager)
+        .allocateRegionGroups(Collections.singletonMap(SECOND_DATABASE, 6), type, -1);
   }
 
   @Test
@@ -600,7 +603,7 @@ public class PartitionManagerProactiveExtensionTest {
         new PreDeleteDatabasePlan(DATABASE, PreDeleteDatabasePlan.PreDeleteType.EXECUTE));
     assertEquals(
         TSStatusCode.DATABASE_NOT_EXIST.getStatusCode(), extend(DATABASE, slots(0)).getCode());
-    verify(loadManager, never()).allocateRegionGroups(anyMap(), any());
+    verify(loadManager, never()).allocateRegionGroups(anyMap(), any(), anyInt());
   }
 
   @Test
@@ -614,14 +617,14 @@ public class PartitionManagerProactiveExtensionTest {
     when(schemaManager.getMaxRegionGroupNum(DATABASE, type)).thenReturn(5);
     assertSuccess(extend(DATABASE, slots(6)));
     assertEquals(5, partitionInfo.getRegionGroupCount(DATABASE, type));
-    verify(loadManager).allocateRegionGroups(Collections.singletonMap(DATABASE, 2), type);
+    verify(loadManager).allocateRegionGroups(Collections.singletonMap(DATABASE, 2), type, -1);
   }
 
   @Test
   public void testAllocationFailureIsReturnedWithoutPersistingRegions() throws Exception {
     doThrow(new NotEnoughDataNodeException(Collections.emptyList(), 3))
         .when(loadManager)
-        .allocateRegionGroups(anyMap(), eq(type));
+        .allocateRegionGroups(anyMap(), eq(type), anyInt());
     assertEquals(
         TSStatusCode.NO_ENOUGH_DATANODE.getStatusCode(), extend(DATABASE, slots(0)).getCode());
     assertEquals(0, partitionInfo.getRegionGroupCount(DATABASE, type));
@@ -661,11 +664,11 @@ public class PartitionManagerProactiveExtensionTest {
     assertSuccess(extend(DATABASE, slots(0, 1, 2)));
     // The three pending slots can now complete the configured minimum of four.
     assertEquals(4, partitionInfo.getRegionGroupCount(DATABASE, type));
-    verify(loadManager).allocateRegionGroups(Collections.singletonMap(DATABASE, 3), type);
+    verify(loadManager).allocateRegionGroups(Collections.singletonMap(DATABASE, 3), type, -1);
     persistSlots(DATABASE, type, 0, 0, 1, 2);
     clearInvocations(loadManager);
     assertSuccess(extend(DATABASE, slots(0, 1, 2)));
-    verify(loadManager, never()).allocateRegionGroups(anyMap(), any());
+    verify(loadManager, never()).allocateRegionGroups(anyMap(), any(), anyInt());
   }
 
   @Test
@@ -673,12 +676,23 @@ public class PartitionManagerProactiveExtensionTest {
     assertEquals(
         TSStatusCode.DATABASE_NOT_EXIST.getStatusCode(),
         extend("root.missing", slots(0)).getCode());
-    verify(loadManager, never()).allocateRegionGroups(anyMap(), any());
+    verify(loadManager, never()).allocateRegionGroups(anyMap(), any(), anyInt());
+  }
+
+  @Test
+  public void testLoadPlacementHintIsForwardedToAllocation() throws Exception {
+    assertSuccess(extend(DATABASE, slots(0), 7));
+    verify(loadManager).allocateRegionGroups(anyMap(), eq(type), eq(7));
   }
 
   private TSStatus extend(String database, Collection<TSeriesPartitionSlot> requested) {
+    return extend(database, requested, -1);
+  }
+
+  private TSStatus extend(
+      String database, Collection<TSeriesPartitionSlot> requested, int preferredDataNodeId) {
     return partitionManager.extendRegionGroupIfNecessary(
-        Collections.singletonMap(database, requested), type);
+        Collections.singletonMap(database, requested), type, preferredDataNodeId);
   }
 
   private void checkSingleSlotTimePartitionsReachMinimumLikeAuto(int minimum) throws Exception {
@@ -703,7 +717,7 @@ public class PartitionManagerProactiveExtensionTest {
         assertEquals(
             Math.min(request + 1, minimum), partitionInfo.getRegionGroupCount(database, type));
         if (request >= minimum) {
-          verify(loadManager, never()).allocateRegionGroups(anyMap(), any());
+          verify(loadManager, never()).allocateRegionGroups(anyMap(), any(), anyInt());
         }
         for (int time = firstTime; time < firstTime + 3; time++) {
           persistSlots(database, type, time, 0);

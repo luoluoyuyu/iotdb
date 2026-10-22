@@ -128,7 +128,27 @@ public class LoadManager {
   public CreateRegionGroupsPlan allocateRegionGroups(
       final Map<String, Integer> allotmentMap, final TConsensusGroupType consensusGroupType)
       throws NotEnoughDataNodeException, DatabaseNotExistsException {
-    return regionBalancer.genRegionGroupsAllocationPlan(allotmentMap, consensusGroupType);
+    return allocateRegionGroups(allotmentMap, consensusGroupType, -1);
+  }
+
+  /**
+   * Generate an optimal CreateRegionGroupsPlan.
+   *
+   * @param allotmentMap Map<DatabaseName, Region allotment>
+   * @param consensusGroupType TConsensusGroupType of RegionGroup to be allocated
+   * @param preferredDataNodeId the DataNode to prefer as the first replica of each new RegionGroup,
+   *     or -1 for no preference
+   * @return CreateRegionGroupsPlan
+   * @throws NotEnoughDataNodeException If there are not enough DataNodes
+   * @throws DatabaseNotExistsException If some specific Databases don't exist
+   */
+  public CreateRegionGroupsPlan allocateRegionGroups(
+      final Map<String, Integer> allotmentMap,
+      final TConsensusGroupType consensusGroupType,
+      final int preferredDataNodeId)
+      throws NotEnoughDataNodeException, DatabaseNotExistsException {
+    return regionBalancer.genRegionGroupsAllocationPlan(
+        allotmentMap, consensusGroupType, preferredDataNodeId);
   }
 
   /**

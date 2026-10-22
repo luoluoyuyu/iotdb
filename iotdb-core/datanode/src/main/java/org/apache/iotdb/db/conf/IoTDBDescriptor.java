@@ -2637,6 +2637,12 @@ public class IoTDBDescriptor {
                 "load_tsfile_source_path_check_enable",
                 Boolean.toString(conf.isLoadTsFileSourcePathCheckEnabled()))));
 
+    conf.setLoadTsFilePreferLocalNode(
+        Boolean.parseBoolean(
+            properties.getProperty(
+                "load_tsfile_prefer_local_node",
+                Boolean.toString(conf.isLoadTsFilePreferLocalNode()))));
+
     conf.setLoadTabletConversionThresholdBytes(
         Long.parseLong(
             properties.getProperty(
@@ -2798,6 +2804,12 @@ public class IoTDBDescriptor {
             properties.getProperty(
                 "load_tsfile_source_path_check_enable",
                 Boolean.toString(conf.isLoadTsFileSourcePathCheckEnabled()))));
+
+    conf.setLoadTsFilePreferLocalNode(
+        Boolean.parseBoolean(
+            properties.getProperty(
+                "load_tsfile_prefer_local_node",
+                Boolean.toString(conf.isLoadTsFilePreferLocalNode()))));
 
     conf.setLoadActiveListeningEnable(
         Boolean.parseBoolean(

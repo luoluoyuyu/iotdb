@@ -322,6 +322,15 @@ public class IoTDBConfig implements DefaultEncodingProvider {
 
   private boolean loadTsFileSourcePathCheckEnabled = false;
 
+  /**
+   * Whether a LOAD request should prefer the local DataNode when it has to create DataRegions.
+   *
+   * <p>This is a best-effort placement hint: it only affects the DataRegions created by the request
+   * itself, and the preference can be lost when the replica order is recomputed after a leader
+   * election or a Region migration.
+   */
+  private volatile boolean loadTsFilePreferLocalNode = true;
+
   /** Strategy of multiple directories. */
   private String multiDirStrategyClassName = null;
 
@@ -1732,6 +1741,14 @@ public class IoTDBConfig implements DefaultEncodingProvider {
 
   public void setLoadTsFileSourcePathCheckEnabled(boolean loadTsFileSourcePathCheckEnabled) {
     this.loadTsFileSourcePathCheckEnabled = loadTsFileSourcePathCheckEnabled;
+  }
+
+  public boolean isLoadTsFilePreferLocalNode() {
+    return loadTsFilePreferLocalNode;
+  }
+
+  public void setLoadTsFilePreferLocalNode(boolean loadTsFilePreferLocalNode) {
+    this.loadTsFilePreferLocalNode = loadTsFilePreferLocalNode;
   }
 
   public void setLoadTsFileAllowedDirs(String[] loadTsFileAllowedDirs) {

@@ -35,6 +35,17 @@ public class GetDataPartitionPlan extends ConfigPhysicalReadPlan {
   // Map<StorageGroup, Map<TSeriesPartitionSlot, List<TTimePartitionSlot>>>
   protected Map<String, Map<TSeriesPartitionSlot, TTimeSlotList>> partitionSlotsMap;
 
+  /**
+   * Best-effort placement hint carried by GetOrCreateDataPartition requests: the DataNode that
+   * should be preferred when the request has to create DataRegions. It is -1 when there is no
+   * preference (all read-only requests and requests from older DataNodes).
+   *
+   * <p>It is deliberately not part of {@link #equals(Object)}: the hint only affects the placement
+   * of Regions created by this request, not which DataPartitions the plan identifies. The field is
+   * also never serialized, since read plans are not persisted or replicated.
+   */
+  protected int preferredDataNodeId = -1;
+
   public GetDataPartitionPlan(final ConfigPhysicalPlanType configPhysicalPlanType) {
     super(configPhysicalPlanType);
   }
@@ -47,6 +58,14 @@ public class GetDataPartitionPlan extends ConfigPhysicalReadPlan {
 
   public Map<String, Map<TSeriesPartitionSlot, TTimeSlotList>> getPartitionSlotsMap() {
     return partitionSlotsMap;
+  }
+
+  public int getPreferredDataNodeId() {
+    return preferredDataNodeId;
+  }
+
+  public void setPreferredDataNodeId(final int preferredDataNodeId) {
+    this.preferredDataNodeId = preferredDataNodeId;
   }
 
   /**

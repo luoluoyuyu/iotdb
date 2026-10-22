@@ -43,6 +43,13 @@ public class GetOrCreateDataPartitionPlan extends GetDataPartitionPlan {
    */
   public static GetOrCreateDataPartitionPlan convertFromRpcTDataPartitionReq(
       final TDataPartitionReq req) {
-    return new GetOrCreateDataPartitionPlan(new ConcurrentHashMap<>(req.getPartitionSlotsMap()));
+    final GetOrCreateDataPartitionPlan plan =
+        new GetOrCreateDataPartitionPlan(new ConcurrentHashMap<>(req.getPartitionSlotsMap()));
+    // An unset optional i32 is read as 0 by Thrift, so isSet() is required to keep -1 as the
+    // "no preference" value.
+    if (req.isSetPreferredDataNodeId()) {
+      plan.setPreferredDataNodeId(req.getPreferredDataNodeId());
+    }
+    return plan;
   }
 }

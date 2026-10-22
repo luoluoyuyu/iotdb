@@ -2457,6 +2457,13 @@ load_write_throughput_bytes_per_second=-1
 # Datatype: String
 load_tsfile_source_path_check_enable=false
 
+# Whether a LOAD request prefers the local DataNode as the first replica of the DataRegions it
+# creates. This is a best-effort hint: it does not affect DataRegions that already exist, and the
+# preference can be lost after a leader election or a Region migration.
+# effectiveMode: hot_reload
+# Datatype: Boolean
+load_tsfile_prefer_local_node=true
+
 # Comma-separated list of directories from which user-issued LOAD TSFILE statements can read.
 # If empty, IoTDB only permits LOAD sources under the internal load TsFile directories.
 # effectiveMode: hot_reload

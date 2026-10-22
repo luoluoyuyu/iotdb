@@ -50,12 +50,18 @@ class DataPartitionBatchFetcher {
       CommonDescriptor.getInstance().getConfig().getTTimePartitionSlotTransmitLimit();
 
   private final IPartitionFetcher fetcher;
+  private final int preferredDataNodeId;
   private volatile String database;
 
   DataPartitionBatchFetcher(final IPartitionFetcher fetcher) {
+    this(fetcher, -1);
+  }
+
+  DataPartitionBatchFetcher(final IPartitionFetcher fetcher, final int preferredDataNodeId) {
     this.fetcher =
         Objects.requireNonNull(
             fetcher, DataNodeQueryMessages.EXCEPTION_FETCHER_CANNOT_BE_NULL_6C143C90);
+    this.preferredDataNodeId = preferredDataNodeId;
   }
 
   void setDatabase(final String database) {
@@ -92,7 +98,8 @@ class DataPartitionBatchFetcher {
           slotList.subList(fromIndex, toIndex);
 
       final List<DataPartitionQueryParam> queryParams = toQueryParams(batchSlots, currentDatabase);
-      final DataPartition dataPartition = fetcher.getOrCreateDataPartition(queryParams, userName);
+      final DataPartition dataPartition =
+          fetcher.getOrCreateDataPartition(queryParams, userName, preferredDataNodeId);
 
       if (dataPartition == null) {
         throw new IllegalStateException(

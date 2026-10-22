@@ -22,6 +22,7 @@ package org.apache.iotdb.confignode.manager.load.balancer;
 import org.apache.iotdb.common.rpc.thrift.TConsensusGroupId;
 import org.apache.iotdb.common.rpc.thrift.TConsensusGroupType;
 import org.apache.iotdb.common.rpc.thrift.TDataNodeConfiguration;
+import org.apache.iotdb.common.rpc.thrift.TDataNodeLocation;
 import org.apache.iotdb.common.rpc.thrift.TRegionReplicaSet;
 import org.apache.iotdb.commons.cluster.NodeStatus;
 import org.apache.iotdb.confignode.conf.ConfigNodeDescriptor;
@@ -81,6 +82,26 @@ public class RegionBalancer {
    */
   public CreateRegionGroupsPlan genRegionGroupsAllocationPlan(
       final Map<String, Integer> allotmentMap, final TConsensusGroupType consensusGroupType)
+      throws NotEnoughDataNodeException, DatabaseNotExistsException {
+    return genRegionGroupsAllocationPlan(allotmentMap, consensusGroupType, -1);
+  }
+
+  /**
+   * Generate a RegionGroups' allocation plan({@link CreateRegionGroupsPlan}) with an optional
+   * placement preference.
+   *
+   * @param allotmentMap Map<DatabaseName, RegionGroup allotment>
+   * @param consensusGroupType {@link TConsensusGroupType} of the new RegionGroups
+   * @param preferredDataNodeId the DataNode to prefer as the first replica of every new DataRegion,
+   *     or -1 for no preference
+   * @return CreateRegionGroupsPlan
+   * @throws NotEnoughDataNodeException When the number of DataNodes is not enough for allocation
+   * @throws DatabaseNotExistsException When some Databases don't exist
+   */
+  public CreateRegionGroupsPlan genRegionGroupsAllocationPlan(
+      final Map<String, Integer> allotmentMap,
+      final TConsensusGroupType consensusGroupType,
+      final int preferredDataNodeId)
       throws NotEnoughDataNodeException, DatabaseNotExistsException {
 
     // Some new RegionGroups will have to occupy unknown DataNodes if the number of online
@@ -142,6 +163,9 @@ public class RegionBalancer {
                 replicationFactor,
                 new TConsensusGroupId(
                     consensusGroupType, getPartitionManager().generateNextRegionGroupId()));
+        if (TConsensusGroupType.DataRegion.equals(consensusGroupType)) {
+          preferDataNodeIfPossible(newRegionGroup, preferredDataNodeId, availableDataNodeMap);
+        }
         createRegionGroupsPlan.addRegionGroup(database, newRegionGroup);
 
         // Mark the new RegionGroup as allocated
@@ -151,6 +175,41 @@ public class RegionBalancer {
     }
 
     return createRegionGroupsPlan;
+  }
+
+  /**
+   * Best-effort placement preference for DataRegions created by a LOAD request: make the preferred
+   * DataNode the first replica, or replace the last replica when it is not part of the allocation
+   * (which keeps the replication factor unchanged).
+   *
+   * <p>The position is only a hint for the write path of the new Region: the route priority is
+   * later recomputed from the elected leader, and {@code RegionGroup#addRegionLocation} re-sorts
+   * replicas by DataNode id. Only the membership of the replica set is durable.
+   */
+  static void preferDataNodeIfPossible(
+      final TRegionReplicaSet regionGroup,
+      final int preferredDataNodeId,
+      final Map<Integer, TDataNodeConfiguration> availableDataNodeMap) {
+    if (preferredDataNodeId < 0 || !availableDataNodeMap.containsKey(preferredDataNodeId)) {
+      return;
+    }
+
+    final List<TDataNodeLocation> locations = regionGroup.getDataNodeLocations();
+    if (locations.isEmpty()) {
+      return;
+    }
+
+    for (int i = 0; i < locations.size(); i++) {
+      if (locations.get(i).getDataNodeId() == preferredDataNodeId) {
+        if (i != 0) {
+          locations.add(0, locations.remove(i));
+        }
+        return;
+      }
+    }
+
+    locations.set(
+        locations.size() - 1, availableDataNodeMap.get(preferredDataNodeId).getLocation());
   }
 
   private NodeManager getNodeManager() {

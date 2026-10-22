@@ -34,6 +34,7 @@ import org.apache.iotdb.db.queryengine.plan.planner.plan.FragmentInstance;
 import org.apache.iotdb.db.queryengine.plan.planner.plan.node.load.LoadSingleTsFileNode;
 import org.apache.iotdb.db.queryengine.plan.scheduler.IScheduler;
 import org.apache.iotdb.db.service.RegionMigrateService;
+import org.apache.iotdb.db.storageengine.load.LoadTsFilePreference;
 import org.apache.iotdb.db.storageengine.load.memory.LoadTsFileDataCacheMemoryBlock;
 import org.apache.iotdb.db.storageengine.load.memory.LoadTsFileMemoryManager;
 
@@ -331,7 +332,9 @@ public class LoadTsFileScheduler implements IScheduler {
     this.failedTsFileNodeIndexes = new ArrayList<>();
     this.fragmentId = distributedQueryPlan.getRootSubPlan().getPlanFragment().getId();
     this.dispatcher = new LoadTsFileDispatcherImpl(clientManager, isGeneratedByPipe);
-    this.partitionFetcher = new DataPartitionBatchFetcher(partitionFetcher);
+    this.partitionFetcher =
+        new DataPartitionBatchFetcher(
+            partitionFetcher, LoadTsFilePreference.getPreferredDataNodeId());
     this.isGeneratedByPipe = isGeneratedByPipe;
     this.memoryBlock = LoadTsFileMemoryManager.getInstance().allocateDataCacheMemoryBlock();
     this.consensusSubmitter = new LoadConsensusSubmitter(clientManager);
